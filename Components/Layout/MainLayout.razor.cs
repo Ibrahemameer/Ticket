@@ -32,7 +32,7 @@ namespace RhinoTicketingSystem.Components.Layout
         [Inject]
         protected NotificationService NotificationService { get; set; }
 
-        private bool sidebarExpanded = true;
+        private bool sidebarExpanded = false;
 
         [Inject]
         protected SecurityService Security { get; set; }

@@ -75,6 +75,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<RhinoTicketingSystem.db_a79800_ticketService>();
 builder.Services.AddScoped<UploadController>();
+builder.Services.AddScoped<DocumentUploadController>();
+
 
 builder.Services.AddDbContext<RhinoTicketingSystem.Data.db_a79800_ticketContext>(options =>
 {

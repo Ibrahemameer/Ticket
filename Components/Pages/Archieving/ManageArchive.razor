@@ -44,6 +44,8 @@
                         <div>
                             <RadzenIcon Icon="folder" Style="margin-right: 8px;" />
                             @((data.Value as System.IO.DirectoryInfo)?.Name)
+                            <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(() => EditFolderName(data.Value as System.IO.DirectoryInfo))" />
+                            <RadzenButton Icon="delete" Size="ButtonSize.Small" Click="@(() => DeleteFolder(data.Value as System.IO.DirectoryInfo))" ButtonStyle="ButtonStyle.Danger" />
                         </div>
                     </Template>
                 </RadzenTreeLevel>
@@ -79,4 +81,3 @@
         </RadzenColumn>
     </RadzenRow>
 </RadzenCard>
-

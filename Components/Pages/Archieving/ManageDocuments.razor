@@ -1,0 +1,149 @@
+﻿@page "/manage-documents"
+@using Radzen
+@using Radzen.Blazor
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@using System.Text.Json
+@inject IJSRuntime JSRuntime
+@attribute [Authorize]
+
+<RadzenCard>
+    <RadzenTabs>
+        <Tabs>
+            <RadzenTabsItem Text="Details">
+                <RadzenFieldset Legend="Document Details">
+                    <RadzenTemplateForm Data="@document" TItem="Document" Submit="@SaveDocument">
+                        <RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+                            <RadzenTextBox @bind-Value="document.Subject" Placeholder="Subject" Style="width: 100%;" />
+                            <RadzenTextBox @bind-Value="document.Description" Placeholder="Description" Multiline="true" Style="width: 100%;" />
+                            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+                        </RadzenStack>
+                    </RadzenTemplateForm>
+                </RadzenFieldset>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Attachments">
+                <RadzenFieldset Legend="Upload Attachments">
+                    <RadzenUpload Url="document-upload/single" Progress="@OnProgress" Complete="@OnComplete" Error="@OnError" ChooseText="Choose file" />
+                    <RadzenProgressBar Value="@uploadProgress" Max="100" />
+                </RadzenFieldset>
+                <RadzenDataGrid Data="@attachments" TItem="Attachment" AllowFiltering="true" AllowSorting="true">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="Attachment" Property="Name" Title="Name" />
+                        <RadzenDataGridColumn TItem="Attachment" Property="Type" Title="Type" />
+                        <RadzenDataGridColumn TItem="Attachment" Property="Size" Title="Size" />
+                        <RadzenDataGridColumn TItem="Attachment" Title="Actions" TextAlign="TextAlign.Center">
+                            <Template Context="attachment">
+                                <RadzenButton Icon="download" Size="ButtonSize.Small" Click="@(() => DownloadAttachment(attachment))" />
+                                <RadzenButton Icon="delete" Size="ButtonSize.Small" Click="@(() => DeleteAttachment(attachment))" ButtonStyle="ButtonStyle.Danger" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+</RadzenCard>
+
+@code {
+    [Inject] private HttpClient Http { get; set; }
+    [Inject] private NotificationService NotificationService { get; set; }
+    private Document document = new Document();
+    private List<Attachment> attachments = new List<Attachment>();
+    private int uploadProgress;
+
+    private async Task SaveDocument()
+    {
+        // Save document logic here
+        // For example, you can call an API to save the document details
+        var response = await Http.PostAsJsonAsync("api/documents", document);
+        if (response.IsSuccessStatusCode)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "Document saved successfully");
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Failed to save document");
+        }
+    }
+
+    private void OnProgress(UploadProgressArgs args)
+    {
+        uploadProgress = args.Progress;
+    }
+
+    private void OnComplete(UploadCompleteEventArgs args)
+    {
+        // Handle upload complete logic here
+        // Parse the response to get the uploaded file information
+        var uploadedFiles = JsonSerializer.Deserialize<List<Attachment>>(args.RawResponse);
+        if (uploadedFiles != null)
+        {
+            foreach (var uploadedFile in uploadedFiles)
+            {
+                var attachment = new Attachment
+                    {
+                        Name = uploadedFile.Name,
+                        Type = uploadedFile.Type,
+                        Size = uploadedFile.Size
+                    };
+                attachments.Add(attachment);
+            }
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "File(s) uploaded successfully");
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Failed to parse uploaded files");
+        }
+    }
+
+    private void OnError(UploadErrorEventArgs args)
+    {
+        // Handle upload error logic here
+        NotificationService.Notify(NotificationSeverity.Error, "Error", $"File upload error: {args.Message}");
+    }
+
+    private async Task DownloadAttachment(Attachment attachment)
+    {
+        // Download attachment logic here
+        var response = await Http.GetAsync($"document-upload/download/{attachment.Name}");
+        if (response.IsSuccessStatusCode)
+        {
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName ?? attachment.Name;
+            await JSRuntime.InvokeVoidAsync("downloadFileFromStream", fileName, Convert.ToBase64String(fileBytes));
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "File downloaded successfully");
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Failed to download file");
+        }
+    }
+
+    private async Task DeleteAttachment(Attachment attachment)
+    {
+        // Delete attachment logic here
+        var response = await Http.DeleteAsync($"api/documents/delete/{attachment.Name}");
+        if (response.IsSuccessStatusCode)
+        {
+            attachments.Remove(attachment);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "File deleted successfully");
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Failed to delete file");
+        }
+    }
+
+    public class Document
+    {
+        public string Subject { get; set; }
+        public string Description { get; set; }
+    }
+
+    public class Attachment
+    {
+        public string Name { get; set; }
+        public string Type { get; set; }
+        public long Size { get; set; }
+    }
+}

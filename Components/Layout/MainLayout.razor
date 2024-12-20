@@ -15,9 +15,8 @@
                     <RadzenAppearanceToggle />
                     <RadzenProfileMenu Visible="@Security.IsAuthenticated()" Click="@ProfileMenuClick">
                         <ChildContent>
-
                             <RadzenProfileMenuItem Path="profile" Icon="settings" Text="Profile" />
-                            <RadzenProfileMenuItem Path="application-users" Icon="person" Text="Users" Visible="@(Security.IsInRole(new string[]{"Admin","Super Admin","Manager"}))"/>
+                            <RadzenProfileMenuItem Path="application-users" Icon="person" Text="Users" Visible="@(Security.IsInRole(new string[]{"Admin","Super Admin","Manager"}))" />
                             <RadzenProfileMenuItem Path="application-roles" Icon="security" Text="Roles" Visible="@(Security.IsInRole(new string[]{"Admin","Super Admin","Manager"}))" />
                             <RadzenProfileMenuItem Text="Logout" Value="Logout" Icon="power_settings_new" />
                         </ChildContent>
@@ -37,7 +36,7 @@
             </RadzenColumn>
         </RadzenRow>
     </RadzenBody>
-    <RadzenSidebar Expanded="false" style="z-index: 2">
+    <RadzenSidebar Expanded="@sidebarExpanded" style="z-index: 2">
         <RadzenStack AlignItems="Radzen.AlignItems.Center" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding); border-bottom: var(--rz-panel-menu-item-border);">
             <RadzenImage Path="images\logo Rhino.png" style="width: 48px; height: 48px;" AlternateText="Application logo"></RadzenImage>
             <RadzenText Text="RhinoTicketingSystem" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" class="rz-mb-0" style="color: var(--rz-sidebar-color);" />
@@ -49,7 +48,7 @@
                     <RadzenPanelMenuItem Text="Tasks" Path="tasks" />
                     <RadzenPanelMenuItem Text="Task Details" Path="tbl-task-details" />
                     <RadzenPanelMenuItem Text="My Assigned Tickets" Path="my-assigned-tickets" />
-                    <RadzenPanelMenuItem Text="All Tickets" Path="all-tickets"/>
+                    <RadzenPanelMenuItem Text="All Tickets" Path="all-tickets" />
                 </ChildContent>
             </RadzenPanelMenuItem>
             <RadzenPanelMenuItem Text="Tickets" Icon="settings" Visible="@(Security.IsAuthenticated())">
@@ -69,6 +68,7 @@
                     <RadzenPanelMenuItem Text="Mega Upload" Path="manage-mega-archive" />
                     @* <RadzenPanelMenuItem Text="OneDrive Archieving" Path="onedrive" />   *@
                     <RadzenPanelMenuItem Text="OneDrive Management" Path="manage-archive" />
+                    <RadzenPanelMenuItem Text="Documents Management" Path="manage-documents" />
                     <RadzenPanelMenuItem Text="Email Management" Path="email-management" />
                 </ChildContent>
             </RadzenPanelMenuItem>

@@ -28,13 +28,11 @@ namespace RhinoTicketingSystem.Components.Pages.Archieving
         private string rootPath;
         private string currentDirectory;
         private List<string> currentPath = new();
-        //private IEnumerable<System.IO.DirectoryInfo> directories;
-        //private IEnumerable<System.IO.FileInfo> files;
         private bool isUploading;
-
 
         private IEnumerable<System.IO.DirectoryInfo> directories = Enumerable.Empty<System.IO.DirectoryInfo>();
         private IEnumerable<System.IO.FileInfo> files = Enumerable.Empty<System.IO.FileInfo>();
+
         protected override void OnInitialized()
         {
             rootPath = Path.Combine(WebHostEnvironment.WebRootPath, "Upload", "OneDrive - Albassami");
@@ -63,6 +61,7 @@ namespace RhinoTicketingSystem.Components.Pages.Archieving
                 currentPath.AddRange(relativePath.Split(Path.DirectorySeparatorChar));
             }
         }
+
         [Inject] private NavigationManager NavigationManager { get; set; }
 
         private void NavigateToFolder(string path)
@@ -79,6 +78,7 @@ namespace RhinoTicketingSystem.Components.Pages.Archieving
                 StateHasChanged();
             }
         }
+
         private async Task CreateNewFolder()
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -87,7 +87,7 @@ namespace RhinoTicketingSystem.Components.Pages.Archieving
             var result = await DialogService.OpenAsync<CreateFolderDialog>("Create New Folder",
                 new Dictionary<string, object>()
                 {
-            { "CurrentPath", currentDirectory }  // Parameter name must match exactly
+                    { "CurrentPath", currentDirectory }  // Parameter name must match exactly
                 });
 
             if (result != null)
@@ -131,7 +131,6 @@ namespace RhinoTicketingSystem.Components.Pages.Archieving
                     isUploading = true;
                     var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
                     var user = authState.User;
-
 
                     // Get current folder's header first
                     var currentFolder = Path.GetFileName(currentDirectory);
@@ -287,7 +286,6 @@ namespace RhinoTicketingSystem.Components.Pages.Archieving
             return $"{size:0.##} {sizes[order]}";
         }
 
-
         private async Task OnUploadClick()
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -331,5 +329,46 @@ namespace RhinoTicketingSystem.Components.Pages.Archieving
                 StateHasChanged();
             }
         }
+
+        private async Task EditFolderName(System.IO.DirectoryInfo directory)
+        {
+            var newFolderName = await JSRuntime.InvokeAsync<string>("prompt", $"Enter new folder name for {directory.Name}");
+            if (!string.IsNullOrEmpty(newFolderName))
+            {
+                var newPath = Path.Combine(directory.Parent.FullName, newFolderName);
+                Directory.Move(directory.FullName, newPath);
+                // Refresh the directory list
+                LoadCurrentDirectory(directory.Parent.FullName);
+            }
+        }
+
+        private async Task DeleteFolder(System.IO.DirectoryInfo directory)
+        {
+            if (directory.GetFiles().Any() || directory.GetDirectories().Any())
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", "Cannot delete folder. The folder is not empty.");
+                return;
+            }
+
+            var confirmed = await DialogService.Confirm(
+                $"Are you sure you want to delete the folder '{directory.Name}'?",
+                "Confirm Delete",
+                new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+
+            if (confirmed == true)
+            {
+                try
+                {
+                    Directory.Delete(directory.FullName, true);
+                    NotificationService.Notify(NotificationSeverity.Success, "Success", "Folder deleted successfully");
+                    LoadCurrentDirectory(directory.Parent.FullName);
+                }
+                catch (Exception ex)
+                {
+                    NotificationService.Notify(NotificationSeverity.Error, "Error", "Failed to delete folder");
+                }
+            }
+        }
+
     }
 }
