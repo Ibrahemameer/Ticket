@@ -1,0 +1,214 @@
+@page "/tasks"
+
+<PageTitle>Tasks</PageTitle>
+@attribute [Authorize]
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="Tasks" TextStyle="TextStyle.H3" TagName="TagName.H1" style="margin: 0" />
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                <RadzenSplitButton Icon="get_app" Text="Export" Click="@ExportClick" Variant="Variant.Flat" Shade="Shade.Lighter">
+                    <RadzenSplitButtonItem Text="Excel" Value="xlsx" />
+                    <RadzenSplitButtonItem Text="CSV" Value="csv" />
+                </RadzenSplitButton>
+                <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick" Variant="Variant.Flat" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+    <RadzenTextBox Placeholder="Search ..." style="display: block; width: 100%" @oninput="@Search" aria-label="Search by all string columns" />
+    <RadzenRow>
+      <RadzenColumn SizeMD=12>
+        <RadzenDataGrid @ref="grid0" ColumnWidth="200px"  Render=Grid0Render AllowFiltering="true" FilterMode="FilterMode.Advanced" AllowPaging="true" AllowSorting="true" ShowPagingSummary="true" PageSizeOptions=@(new int[]{5, 10, 20, 30})
+            Data="@tasks" RowUpdate="@GridRowUpdate" RowCreate="@GridRowCreate" TItem="RhinoTicketingSystem.Models.db_a79800_ticket.Task" RowSelect="@GetChildData">
+            <Columns>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.Task" Property="Id" Title="Id">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.Task" Property="Title" Title="Title">
+                  <EditTemplate Context="task">
+                    <RadzenFormField Text="Title" Variant="Variant.Filled">
+                     <ChildContent>
+                      <RadzenTextBox style="display: block; width: 100%" @bind-Value="@task.Title" Name="Title" />
+                    </ChildContent>
+                   </RadzenFormField>
+                  </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.Task" Property="TblEngineer.Name" Title="Tbl Engineer">
+                  <EditTemplate Context="task">
+                    <RadzenFormField Text="Tbl Engineer" Variant="Variant.Filled">
+                     <ChildContent>
+                    <RadzenDropDownDataGrid Data="@tblEngineersForEngineerId" TextProperty="Name" ValueProperty="Id" AllowClear=true
+                         style="display: block; width: 100%" @bind-Value="@task.EngineerId" Name="EngineerId"
+                           />
+                    </ChildContent>
+                   </RadzenFormField>
+                  </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.Task" Property="CreatedDate" Title="Created Date">
+                  <EditTemplate Context="task">
+                    <RadzenFormField Text="Created Date" Variant="Variant.Filled">
+                     <ChildContent>
+                      <RadzenDatePicker DateFormat="MM/dd/yyyy" style="display: block; width: 100%" @bind-Value="@task.CreatedDate" Name="CreatedDate" />
+                     </ChildContent>
+                     <Helper>
+                      <RadzenRequiredValidator Component="CreatedDate" Text="CreatedDate is required"  />
+                     </Helper>
+                   </RadzenFormField>
+                  </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.Task" Property="DueDate" Title="Due Date">
+                  <EditTemplate Context="task">
+                    <RadzenFormField Text="Due Date" Variant="Variant.Filled">
+                     <ChildContent>
+                      <RadzenDatePicker DateFormat="MM/dd/yyyy" style="display: block; width: 100%" @bind-Value="@task.DueDate" Name="DueDate" />
+                     </ChildContent>
+                     <Helper>
+                      <RadzenRequiredValidator Component="DueDate" Text="DueDate is required"  />
+                     </Helper>
+                   </RadzenFormField>
+                  </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.Task" Property="TaskType.Name" Title="Task Type">
+                  <EditTemplate Context="task">
+                    <RadzenFormField Text="Task Type" Variant="Variant.Filled">
+                     <ChildContent>
+                    <RadzenDropDownDataGrid Data="@taskTypesForTypeId" TextProperty="Name" ValueProperty="Id" AllowClear=true
+                         style="display: block; width: 100%" @bind-Value="@task.TypeId" Name="TypeId"
+                           />
+                    </ChildContent>
+                   </RadzenFormField>
+                  </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.Task" Property="TaskStatus.Name" Title="Task Status">
+                  <EditTemplate Context="task">
+                    <RadzenFormField Text="Task Status" Variant="Variant.Filled">
+                     <ChildContent>
+                    <RadzenDropDownDataGrid Data="@taskStatusesForStatusId" TextProperty="Name" ValueProperty="Id" AllowClear=true
+                         style="display: block; width: 100%" @bind-Value="@task.StatusId" Name="StatusId"
+                           />
+                    </ChildContent>
+                   </RadzenFormField>
+                  </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.Task" Filterable="false" Sortable="false" Width="156px" TextAlign="TextAlign.Center">
+                    <EditTemplate Context="task">
+                        <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                            style="margin-top: 0.25rem; margin-right: 0.25rem; margin-bottom: 0.25rem"
+                            Click=@(args => SaveButtonClick(args, task)) @onclick:stopPropagation="true" />
+                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                            Click=@(args => CancelButtonClick(args, task)) @onclick:stopPropagation="true" />
+                    </EditTemplate>
+                    <Template Context="task">
+
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                            style="margin-top: 0.25rem; margin-right: 0.25rem; margin-bottom: 0.25rem"
+                            Click=@(args => EditButtonClick(args, task)) @onclick:stopPropagation="true" />
+
+                        <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Medium"
+                            Shade="Shade.Lighter" Variant="Variant.Flat"
+                            Click=@(args => GridDeleteButtonClick(args, task)) @onclick:stopPropagation="true" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+
+        </RadzenDataGrid>
+
+                <RadzenStack Class="rz-my-8">
+                    <RadzenRow Gap="0" AlignItems="AlignItems.Center">
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenText Visible="@(taskChild != null)" Text="TblTaskDetails" TextStyle="TextStyle.H4" TagName="TagName.H2" style="margin: 0" />
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                                <RadzenButton Visible="@(taskChild != null)" Icon="add_circle_outline" Text="Add" Click=@(args => TblTaskDetailsAddButtonClick(args,taskChild)) />
+                            </RadzenStack>
+                        </RadzenColumn>
+                    </RadzenRow>
+                    <RadzenDataGrid ColumnWidth="200px" Visible="@(taskChild != null)" @ref=TblTaskDetailsDataGrid AllowFiltering="true" FilterMode="Radzen.FilterMode.Advanced" AllowPaging="true" AllowSorting="true" ShowPagingSummary="true" PageSizeOptions=@(new int[]{5, 10, 20, 30})
+                      Data="@taskChild?.TblTaskDetails" TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTaskDetail" >
+                      <Columns>
+                        <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTaskDetail" Property="Id" Title="Id">
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTaskDetail" Property="Task.Title" Title="Task">
+                          <EditTemplate Context="tblTaskDetail">
+                           <RadzenFormField Text="Task" Variant="Variant.Filled">
+                            <ChildContent>
+                        <RadzenDropDownDataGrid Data="@tasksForTaskIdTblTaskDetails" TextProperty="Title" ValueProperty="Id" 
+                             style="display: block; width: 100%" @bind-Value="@tblTaskDetail.TaskId" Name="TaskId"
+                               />
+                           </ChildContent>
+                          </RadzenFormField>
+                          </EditTemplate>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTaskDetail" Property="TblEngineer.Name" Title="Tbl Engineer">
+                          <EditTemplate Context="tblTaskDetail">
+                           <RadzenFormField Text="Tbl Engineer" Variant="Variant.Filled">
+                            <ChildContent>
+                        <RadzenDropDownDataGrid Data="@tblEngineersForEngineerIdTblTaskDetails" TextProperty="Name" ValueProperty="Id" 
+                             style="display: block; width: 100%" @bind-Value="@tblTaskDetail.EngineerId" Name="EngineerId"
+                               />
+                           </ChildContent>
+                          </RadzenFormField>
+                          </EditTemplate>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTaskDetail" Property="ActionDate" Title="Action Date">
+                          <EditTemplate Context="tblTaskDetail">
+                           <RadzenFormField Text="Action Date" Variant="Variant.Filled">
+                            <ChildContent>
+                              <RadzenDatePicker DateFormat="MM/dd/yyyy" style="display: block; width: 100%" @bind-Value="@tblTaskDetail.ActionDate" Name="ActionDate" />
+                           </ChildContent>
+                          </RadzenFormField>
+                          </EditTemplate>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTaskDetail" Property="TaskstatusId" Title="Taskstatus Id">
+                          <EditTemplate Context="tblTaskDetail">
+                           <RadzenFormField Text="Taskstatus Id" Variant="Variant.Filled">
+                            <ChildContent>
+                              <RadzenNumeric style="display: block; width: 100%" @bind-Value="@tblTaskDetail.TaskstatusId" Name="TaskstatusId" />
+                           </ChildContent>
+                          </RadzenFormField>
+                          </EditTemplate>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTaskDetail" Property="TaskStatus" Title="Task Status">
+                          <EditTemplate Context="tblTaskDetail">
+                           <RadzenFormField Text="Task Status" Variant="Variant.Filled">
+                            <ChildContent>
+                              <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblTaskDetail.TaskStatus" Name="TaskStatus" />
+                           </ChildContent>
+                          </RadzenFormField>
+                          </EditTemplate>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTaskDetail" Property="EngineerComment" Title="Engineer Comment">
+                          <EditTemplate Context="tblTaskDetail">
+                           <RadzenFormField Text="Engineer Comment" Variant="Variant.Filled">
+                            <ChildContent>
+                              <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblTaskDetail.EngineerComment" Name="EngineerComment" />
+                           </ChildContent>
+                          </RadzenFormField>
+                          </EditTemplate>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTaskDetail" Filterable="false" Sortable="false" Width="70px" TextAlign="TextAlign.Center">
+                        <EditTemplate Context="tblTaskDetailChild">
+                            <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                style="margin-top: 0.25rem; margin-right: 0.25rem; margin-bottom: 0.25rem"
+                                Click=@(args => TblTaskDetailsSaveButtonClick(args, tblTaskDetailChild)) @onclick:stopPropagation="true" />
+                            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                Click=@(args => TblTaskDetailsCancelButtonClick(args, tblTaskDetailChild)) @onclick:stopPropagation="true" />
+                        </EditTemplate>
+                            <Template Context="tblTaskDetailChild">
+
+                                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                    style="margin-top: 0.25rem; margin-right: 0.25rem; margin-bottom: 0.25rem"
+                                    Click=@(args => TblTaskDetailsEditButtonClick(args, tblTaskDetailChild)) @onclick:stopPropagation="true" />
+
+                                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Medium" Shade="Shade.Lighter" Variant="Variant.Flat"
+                                    Click=@(args => TblTaskDetailsDeleteButtonClick(args, tblTaskDetailChild)) @onclick:stopPropagation="true" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                      </Columns>
+                    </RadzenDataGrid>
+                </RadzenStack>
+    </RadzenColumn>
+  </RadzenRow>
+</RadzenStack>

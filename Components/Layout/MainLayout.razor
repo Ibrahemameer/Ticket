@@ -1,0 +1,89 @@
+@inherits LayoutComponentBase
+@inject CookieThemeService CookieThemeService
+@inject Microsoft.Extensions.Localization.IStringLocalizer<MainLayout> L
+<RadzenComponents />
+
+<RadzenLayout style="grid-template-areas: 'rz-sidebar rz-header' 'rz-sidebar rz-body';">
+    <RadzenHeader>
+        <RadzenRow JustifyContent="JustifyContent.Start" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenColumn Size="5">
+                <RadzenSidebarToggle Click="@SidebarToggleClick"></RadzenSidebarToggle>
+            </RadzenColumn>
+            <RadzenColumn Size="7">
+                <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem" class="rz-px-2">
+                    <CulturePicker />
+                    <RadzenAppearanceToggle />
+                    <RadzenProfileMenu Visible="@Security.IsAuthenticated()" Click="@ProfileMenuClick">
+                        <ChildContent>
+
+                            <RadzenProfileMenuItem Path="profile" Icon="settings" Text="Profile" />
+                            <RadzenProfileMenuItem Path="application-users" Icon="person" Text="Users" Visible="@(Security.IsInRole(new string[]{"Admin","Super Admin","Manager"}))"/>
+                            <RadzenProfileMenuItem Path="application-roles" Icon="security" Text="Roles" Visible="@(Security.IsInRole(new string[]{"Admin","Super Admin","Manager"}))" />
+                            <RadzenProfileMenuItem Text="Logout" Value="Logout" Icon="power_settings_new" />
+                        </ChildContent>
+                        <Template>
+                            @Security.User?.Name
+                            <RadzenGravatar Email="@Security.User?.Name" />
+                        </Template>
+                    </RadzenProfileMenu>
+                </RadzenStack>
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenHeader>
+    <RadzenBody Expanded="@sidebarExpanded">
+        <RadzenRow class="rz-mx-auto rz-px-4 rz-pt-2 rz-pt-md-4 rz-pt-lg-6 rz-pt-xl-12 rz-pb-2 rz-pb-lg-12" Style="max-width: 1440px;">
+            <RadzenColumn Size="12">
+                @Body
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenBody>
+    <RadzenSidebar Expanded="false" style="z-index: 2">
+        <RadzenStack AlignItems="Radzen.AlignItems.Center" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding); border-bottom: var(--rz-panel-menu-item-border);">
+            <RadzenImage Path="images\logo Rhino.png" style="width: 48px; height: 48px;" AlternateText="Application logo"></RadzenImage>
+            <RadzenText Text="RhinoTicketingSystem" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" class="rz-mb-0" style="color: var(--rz-sidebar-color);" />
+        </RadzenStack>
+        <RadzenPanelMenu Visible="true">
+            <RadzenPanelMenuItem Text="Home" Path="" Visible="@(Security.IsAuthenticated())" />
+            <RadzenPanelMenuItem Text="IT Department" Icon="settings" Visible="@(Security.IsInRole(new string[]{"Admin","Super Admin","Engineer","Manager"}))">
+                <ChildContent>
+                    <RadzenPanelMenuItem Text="Tasks" Path="tasks" />
+                    <RadzenPanelMenuItem Text="Task Details" Path="tbl-task-details" />
+                    <RadzenPanelMenuItem Text="My Assigned Tickets" Path="my-assigned-tickets" />
+                    <RadzenPanelMenuItem Text="All Tickets" Path="all-tickets"/>
+                </ChildContent>
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Tickets" Icon="settings" Visible="@(Security.IsAuthenticated())">
+                <ChildContent>
+                    <RadzenPanelMenuItem Text="Create Ticket" Path="tbl-tickets" />
+                    <RadzenPanelMenuItem Text="View My Tickets" Path="" />
+                </ChildContent>
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Settings" Icon="Settings" Visible="@(Security.IsInRole("Admin"))">
+                <ChildContent>
+                    <RadzenPanelMenuItem Text="Task Statuses" Path="task-statuses" />
+                    <RadzenPanelMenuItem Text="Task Types" Path="task-types" />
+                    <RadzenPanelMenuItem Text="Categories" Path="tbl-categories" />
+                    <RadzenPanelMenuItem Text="Employees" Path="tbl-employees" />
+                    <RadzenPanelMenuItem Text="Engineers" Path="tbl-engineers" />
+                    <RadzenPanelMenuItem Text="Ticket Statuses" Path="tbl-statuses" />
+                    <RadzenPanelMenuItem Text="Mega Upload" Path="manage-mega-archive" />
+                    @* <RadzenPanelMenuItem Text="OneDrive Archieving" Path="onedrive" />   *@
+                    <RadzenPanelMenuItem Text="OneDrive Management" Path="manage-archive" />
+                    <RadzenPanelMenuItem Text="Email Management" Path="email-management" />
+                </ChildContent>
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Reports" Icon="settings" Visible="@(Security.IsInRole(new string[]{"Admin","Super Admin"}))">
+                <ChildContent>
+                    <RadzenPanelMenuItem Text="Opened Tickets" Path="active-tickets" />
+                    <RadzenPanelMenuItem Text="Active Tickets" Path="active-tickets" />
+                    <RadzenPanelMenuItem Text="Solved Tickets" Path="tbl-tickets" />
+                    <RadzenPanelMenuItem Text="Dashboard" Path="dashboard" />
+                </ChildContent>
+            </RadzenPanelMenuItem>
+        </RadzenPanelMenu>
+        <RadzenStack AlignItems="Radzen.AlignItems.Center" Gap="0" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding);">
+            <RadzenText Text="RhinoTicketingSystem v1.0.0" TextStyle="Radzen.Blazor.TextStyle.Caption" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" />
+            <RadzenText Text="Copyright Ⓒ 2024" TextStyle="Radzen.Blazor.TextStyle.Caption" class="rz-mb-0" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" />
+        </RadzenStack>
+    </RadzenSidebar>
+</RadzenLayout>

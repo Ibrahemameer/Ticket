@@ -1,0 +1,108 @@
+﻿@using RhinoTicketingSystem.Models
+@namespace RhinoTicketingSystem.Components.Dialogs
+
+<RadzenCard Style="padding: 20px;">
+    <RadzenDataGrid Data="@attachmentList" TItem="OneDriveFileAttachment" AllowFiltering="true" AllowSorting="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="OneDriveFileAttachment" Property="Name" Title="Name" />
+            <RadzenDataGridColumn TItem="OneDriveFileAttachment" Property="Size" Title="Size" />
+            <RadzenDataGridColumn TItem="OneDriveFileAttachment" Property="Type" Title="Type" />
+            <RadzenDataGridColumn TItem="OneDriveFileAttachment" Title="Actions" TextAlign="TextAlign.Center">
+                <Template Context="file">
+                    <RadzenButton Icon="delete" Size="ButtonSize.Small" Click="@(() => RemoveFile(file))" ButtonStyle="ButtonStyle.Danger" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+    <RadzenUpload Multiple="true" Accept="*/*" Auto="false" Change="@OnFileSelected" />
+    <div class="row justify-content-center mt-3">
+        <RadzenButton Text="Upload" Click="@ProcessFiles" ButtonStyle="ButtonStyle.Primary" />
+    </div>
+</RadzenCard>
+
+@code {
+    [Inject] private DialogService DialogService { get; set; }
+    [Inject] private NotificationService NotificationService { get; set; }
+    private List<OneDriveFileAttachment> attachmentList = new();
+    private const long MaxFileSize = 10 * 1024 * 1024;
+
+    private async Task OnFileSelected(UploadChangeEventArgs args)
+    {
+        if (args.Files != null && args.Files.Any())
+        {
+            foreach (var file in args.Files)
+            {
+                try
+                {
+                    using var stream = file.OpenReadStream(maxAllowedSize: MaxFileSize);
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+
+                    var attachment = new OneDriveFileAttachment
+                        {
+                            Name = file.Name,
+                            Size = FormatFileSize(file.Size),
+                            Type = Path.GetExtension(file.Name),
+                            LastModified = DateTime.Now,
+                            FileContent = memoryStream.ToArray(),
+                            ContentType = GetContentType(file.Name)
+                        };
+
+                    if (!attachmentList.Any(a => a.Name == attachment.Name))
+                    {
+                        attachmentList.Add(attachment);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    NotificationService.Notify(NotificationSeverity.Error,
+                        "Error",
+                        $"Failed to process file {file.Name}: {ex.Message}");
+                }
+            }
+        }
+    }
+    private string GetContentType(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".txt" => "text/plain",
+            ".pdf" => "application/pdf",
+            ".doc" => "application/msword",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".xls" => "application/vnd.ms-excel",
+            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".png" => "image/png",
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            _ => "application/octet-stream"
+        };
+    }
+
+    private void RemoveFile(OneDriveFileAttachment file)
+    {
+        attachmentList.Remove(file);
+    }
+
+    private void ProcessFiles()
+    {
+        if (attachmentList.Any())
+        {
+            DialogService.Close(attachmentList.Where(f => f.IsValid).ToList());
+        }
+    }
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        int order = 0;
+        double size = bytes;
+        while (size >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            size /= 1024;
+        }
+        return $"{size:0.##} {sizes[order]}";
+    }
+}

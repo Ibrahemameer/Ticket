@@ -1,0 +1,51 @@
+﻿@namespace RhinoTicketingSystem.Components.Dialogs
+
+
+
+<RadzenCard Style="padding: 20px;">
+    <RadzenTemplateForm TItem="FolderModel" Data="@model" Submit="@OnSubmit">
+        <RadzenStack Spacing="2">
+            <RadzenFormField Text="Folder Name" Variant="Variant.Filled">
+                <RadzenTextBox @bind-Value="@model.FolderName" Name="FolderName" />
+            </RadzenFormField>
+            <RadzenFormField Text="Description" Variant="Variant.Filled">
+                <RadzenTextArea @bind-Value="@model.Description" Name="Description" />
+            </RadzenFormField>
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="@(() => DialogService.Close(null))" />
+                <RadzenButton ButtonType="ButtonType.Submit" Text="Create" ButtonStyle="ButtonStyle.Primary" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    [Inject] private DialogService DialogService { get; set; }
+
+    [Parameter] 
+    public string CurrentPath { get; set; }
+
+    private FolderModel model = new();
+
+    private void OnSubmit()
+    {
+        DialogService.Close(model);
+    }
+
+    public class FolderModel
+    {
+        public string FolderName { get; set; }
+        public string Description { get; set; }
+    }
+
+    private string folderName;
+
+    private void CreateFolder()
+    {
+        if (!string.IsNullOrEmpty(folderName))
+        {
+            DialogService.Close(folderName);
+        }
+    }
+
+}

@@ -1,0 +1,142 @@
+﻿@page "/AddTicket-Attachment"
+@using NetcodeHub.Packages.Extensions
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Forms
+@inject IWebHostEnvironment env
+@attribute [Authorize]
+
+<RadzenTemplateForm TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket"
+                    Data="@tblTicket"
+                    Visible="@(tblTicket != null && canEdit)"
+                    Submit="@FormSubmit">
+    <RadzenRow>
+        <RadzenColumn SizeMD="9">
+            <RadzenLabel style="font-weight: bold" Text="Item no longer available." Visible="@(!canEdit)" />
+        </RadzenColumn>
+        <RadzenColumn SizeMD="3">
+            <RadzenButton ButtonStyle="ButtonStyle.Secondary" style="margin-bottom: 20px" Text="Close" Visible="@(!canEdit)" Click="@CancelButtonClick" />
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenRow>
+        <RadzenColumn SizeMD="9">
+            <RadzenLabel style="font-weight: bold" Text="Another user has made conflicting changes to one or more of the fields you have modified. Please reload." Visible="@hasChanges" />
+        </RadzenColumn>
+        <RadzenColumn SizeMD="3">
+            <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="autorenew" style="margin-bottom: 20px" Text="Reload" Visible="@hasChanges" Click="@ReloadButtonClick" />
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenAlert Shade="Shade.Lighter" Variant="Variant.Flat" Size="AlertSize.Small" AlertStyle="AlertStyle.Danger" Visible="@errorVisible">Cannot save TblTicket</RadzenAlert>
+
+    <RadzenCard Style="margin-bottom: 1rem">
+        <RadzenRow>
+            <RadzenColumn SizeMD="6">
+                <RadzenStack Spacing="1rem">
+                    <RadzenText TextStyle="TextStyle.H6">Ticket Details</RadzenText>
+                    <RadzenRow>
+                        <RadzenColumn SizeMD="4">
+                            <RadzenLabel Text="Ticket Header" Component="TicketHeader" />
+                        </RadzenColumn>
+                        <RadzenColumn SizeMD="8">
+                            <RadzenTextBox Style="width: 100%" @bind-Value="@tblTicket.TicketHeader" Name="TicketHeader" />
+                        </RadzenColumn>
+                    </RadzenRow>
+                    <RadzenRow>
+                        <RadzenColumn SizeMD="4">
+                            <RadzenLabel Text="Ticket Status" Component="TicketStatus" />
+                        </RadzenColumn>
+                        <RadzenColumn SizeMD="8">
+                            <RadzenTextBox Style="width: 100%" Disabled="true" @bind-Value="@tblTicket.TicketStatus" Name="TicketStatus" />
+                        </RadzenColumn>
+                    </RadzenRow>
+                    <RadzenRow>
+                        <RadzenColumn SizeMD="12">
+                            <InputFile Style="width: 100%" OnChange="HandleFileSelected" multiple />
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenStack>
+            </RadzenColumn>
+
+            <RadzenColumn SizeMD="6">
+                @if (uploadedFilesPath.Count > 0)
+                {
+                    <RadzenCard Style="height: 100%; padding: 1rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Upload Progress</RadzenText>
+                        @foreach (var file in uploadedFilesPath)
+                        {
+                            <RadzenStack Spacing="0.5rem" Style="margin-bottom: 0.5rem">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem">
+                                    <RadzenText TextStyle="TextStyle.Body2">@file.Filename</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2">
+                                        @((file.UploadedBytes / (1024.0 * 1024.0)).ToString("0.000")) MB of @file.FileSize
+                                    </RadzenText>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem">
+                                    <RadzenProgressBar Style="flex-grow: 1" Value="@Math.Round(file.UploadedPercentage, 3)" ShowValue="true" />
+                                    <RadzenButton ButtonStyle="ButtonStyle.Danger"
+                                                  Icon="delete_forever"
+                                                  Size="ButtonSize.ExtraSmall"
+                                                  Click="@(() => DeleteUploadedFile(file))" />
+                                </div>
+                            </RadzenStack>
+                        }
+                    </RadzenCard>
+                }
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenCard>
+
+    <RadzenText TextStyle="TextStyle.H6" Style="color: rebeccapurple; margin-top: 1rem">Attachments for this ticket</RadzenText>
+    <RadzenDataGrid @ref="grid0"
+                    AllowFiltering="true"
+                    FilterMode="FilterMode.Advanced"
+                    AllowPaging="true"
+                    AllowSorting="true"
+                    PageSizeOptions=@(new int[]{5, 10, 20, 30})
+                    ShowPagingSummary="true"
+                    Data="@tblTicketAttachments"
+                    TItem="RhinoTicketingSystem.Models.DbA79800Ticket.TblTicketattachment">
+        <Columns>
+            <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.DbA79800Ticket.TblTicketattachment" Property="AttachedFileName" Title="File Name" />
+            <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.DbA79800Ticket.TblTicketattachment" Property="attachedFileSize" Title="Size" />
+            <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.DbA79800Ticket.TblTicketattachment" Property="CreatedDate" Title="Date" />
+            <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.DbA79800Ticket.TblTicketattachment" Property="FileType" Title="File Type" />
+            <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.DbA79800Ticket.TblTicketattachment"
+                                  Width="140px"
+                                  TextAlign="TextAlign.Center">
+                <Template Context="attach">
+                    <RadzenButton ButtonStyle="ButtonStyle.Info"
+                                  Icon="pageview"
+                                  Size="ButtonSize.Small"
+                                  Click="@(() => DownloadFile(attach.Id))"
+                                  @onclick:stopPropagation="true" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger"
+                                  Icon="delete_forever"
+                                  Size="ButtonSize.Small"
+                                  Click="@(() => ConfirmDeleteAttachmentFromDatabase(attach))"
+                                  @onclick:stopPropagation="true" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+
+    <RadzenStack Orientation="Orientation.Horizontal"
+                 JustifyContent="JustifyContent.End"
+                 Gap="1rem"
+                 Style="margin-top: 1rem">
+        <RadzenButton Size="ButtonSize.Large"
+                      ButtonStyle="ButtonStyle.Success"
+                      Text="OK"
+                      Variant="Variant.Flat"
+                      Click="@CancelButtonClick" />
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@if (!string.IsNullOrEmpty(uploadMessage))
+{
+    <RadzenText TextStyle="TextStyle.Caption" Style="color: mediumslateblue; margin-top: 1rem">
+        @uploadMessage
+    </RadzenText>
+}

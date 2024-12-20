@@ -1,0 +1,75 @@
+@inject Microsoft.Extensions.Localization.IStringLocalizer<TblChartOfAccounts> L
+@page "/tbl-chart-of-accounts"
+@attribute [Authorize]
+
+<PageTitle>TblChartOfAccounts</PageTitle>
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="TblChartOfAccounts" TextStyle="TextStyle.H3" TagName="TagName.H1" style="margin: 0" />
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                <RadzenSplitButton Icon="get_app" Text="Export" Click="@ExportClick" Variant="Variant.Flat" Shade="Shade.Lighter">
+                    <RadzenSplitButtonItem Text="Excel" Value="xlsx" />
+                    <RadzenSplitButtonItem Text="CSV" Value="csv" />
+                </RadzenSplitButton>
+                <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick" Variant="Variant.Flat" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+    <RadzenTextBox Placeholder="Search ..." style="display: block; width: 100%" @oninput="@Search" aria-label="Search by all string columns" />
+    <RadzenRow>
+      <RadzenColumn SizeMD=12>
+        <RadzenDataGrid @ref="grid0" ColumnWidth="200px"   AllowFiltering="true" FilterMode="FilterMode.Advanced" AllowPaging="true" AllowSorting="true" ShowPagingSummary="true" PageSizeOptions=@(new int[]{5, 10, 20, 30})
+            Data="@tblChartOfAccounts" TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" RowSelect="@EditRow">
+            <Columns>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="ChartId" Title="Chart Id">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="ChartCode" Title="Chart Code">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="ChartName" Title="Chart Name">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="ChartFullName" Title="Chart Full Name">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="AccountLevel" Title="Account Level">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="TblChartOfAccount1.ChartName" Title="Tbl Chart Of Account1">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="AccoutnType" Title="Accoutn Type">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="Direction" Title="Direction">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="Ob" Title="Ob">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="Date" Title="Date">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="IsConnectedWithContact" Title="Is Connected With Contact">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="IsConnectedWithCostCenter" Title="Is Connected With Cost Center">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="IsConnectedWithBusinessType" Title="Is Connected With Business Type">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="IsManualJournalNotAllowed" Title="Is Manual Journal Not Allowed">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="IsConnectedWithProject" Title="Is Connected With Project">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="FinancialStatementClassificationGroupId" Title="Financial Statement Classification Group Id">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Property="AccountingSerial" Title="Accounting Serial">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblChartOfAccount" Filterable="false" Sortable="false" Width="70px" TextAlign="TextAlign.Center">
+                    <Template Context="tblChartOfAccount">
+
+                        <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Medium"
+                            Shade="Shade.Lighter" Variant="Variant.Flat"
+                            Click=@(args => GridDeleteButtonClick(args, tblChartOfAccount)) @onclick:stopPropagation="true" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+
+        </RadzenDataGrid>
+
+    </RadzenColumn>
+  </RadzenRow>
+</RadzenStack>

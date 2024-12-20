@@ -1,0 +1,267 @@
+﻿@page "/onedrive"
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Graph.Models
+@using RhinoTicketingSystem.Services
+@using Radzen
+@using Radzen.Blazor
+@using System.IO
+
+@inject OneDriveService OneDriveService
+
+@inject IJSRuntime JSRuntime
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+
+@attribute [Authorize]
+
+<RadzenCard>
+    <RadzenBreadCrumb>
+        <RadzenBreadCrumbItem Text="Root" Path="" Click="@(() => LoadFiles(null))" />
+        @if (!string.IsNullOrEmpty(currentFolderId))
+        {
+            <RadzenBreadCrumbItem Text="@currentFolderName" />
+        }
+    </RadzenBreadCrumb>
+
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Class="rz-mb-6">
+        <RadzenText TextStyle="TextStyle.H5">OneDrive Files</RadzenText>
+        <RadzenButton Icon="cloud_upload"
+                      Text="@(isUploading ? $"Uploading... {uploadProgress}%" : "Upload")"
+                      Disabled="@isUploading"
+                      Click="@OnUploadClick" />
+    </RadzenStack>
+
+    <RadzenRow>
+        <RadzenColumn Size="12" SizeMD="4">
+            <RadzenCard>
+                <RadzenTree Data="@folders" Change="@OnFolderSelect">
+                    <RadzenTreeLevel TextProperty="Name"
+                                     HasChildren="@(item => ((Microsoft.Graph.Models.DriveItem)item).Folder != null)" />
+                </RadzenTree>
+            </RadzenCard>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="8">
+            <RadzenDataGrid Data="@files"
+                            TItem="Microsoft.Graph.Models.DriveItem"
+                            AllowFiltering="true"
+                            AllowSorting="true"
+                            IsLoading="@isLoading">
+                <Columns>
+                    <RadzenDataGridColumn TItem="DriveItem"
+                                          Property="Name"
+                                          Title="Name"
+                                          Sortable="true"
+                                          Filterable="true">
+                        <Template Context="file">
+                            <RadzenIcon Icon="@GetFileIcon(file.Name)" />
+                            @file.Name
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DriveItem"
+                                          Property="Size"
+                                          Title="Size"
+                                          Sortable="true">
+                        <Template Context="file">
+                            @FormatFileSize(file.Size)
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DriveItem"
+                                          Title="Actions"
+                                          TextAlign="TextAlign.Center">
+                        <Template Context="file">
+                            <RadzenButton Icon="download"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => DownloadFile(file))"
+                                          ButtonStyle="ButtonStyle.Info" />
+                            <AuthorizeView Roles="Admin,FileManager">
+                                <Authorized>
+                                    <RadzenButton Icon="delete"
+                                                  Size="ButtonSize.Small"
+                                                  Click="@(() => DeleteFile(file))"
+                                                  ButtonStyle="ButtonStyle.Danger" />
+                                </Authorized>
+                            </AuthorizeView>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenCard>
+
+@code {
+
+
+    private IEnumerable<DriveItem> files;
+    private IEnumerable<DriveItem> folders;
+    private string currentFolderId;
+
+    private bool isUploading;
+    private int uploadProgress;
+
+    private bool isLoading;
+    private string errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFiles();
+    }
+
+    private async Task LoadFiles(string folderId = null)
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            var items = await OneDriveService.GetFilesAndFolders(folderId);
+            files = items.Where(i => i.Folder == null);
+            folders = items.Where(i => i.Folder != null);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to load files and folders";
+            NotificationService.Notify(NotificationSeverity.Error, "Error", errorMessage);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnUploadClick()
+    {
+        var result = await DialogService.OpenAsync("Upload File", ds =>
+    @<div>
+        <RadzenUpload Multiple="false"
+                      Accept="*/*"
+                      Auto="false"
+                      Change="@(args => HandleFileSelected(args))" />
+        <div class="row justify-content-center">
+            <RadzenButton Text="Upload"
+                          Click="() => ds.Close(true)"
+                          ButtonStyle="ButtonStyle.Primary" />
+        </div>
+    </div>);
+
+        if (result == true)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "File uploaded successfully");
+        }
+    }
+    private async Task HandleFileSelected(UploadChangeEventArgs args)
+    {
+        if (args.Files != null && args.Files.Any())
+        {
+            try
+            {
+                isUploading = true;
+                var file = args.Files.First();
+                using var stream = new MemoryStream();
+                await file.OpenReadStream().CopyToAsync(stream);
+                stream.Position = 0;
+
+                await OneDriveService.UploadFile(stream, file.Name);
+                await LoadFiles(currentFolderId);
+
+                NotificationService.Notify(NotificationSeverity.Success, "Success", "File uploaded successfully");
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", "Failed to upload file");
+            }
+            finally
+            {
+                isUploading = false;
+                uploadProgress = 0;
+            }
+        }
+    }
+    private string GetFileIcon(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".pdf" => "picture_as_pdf",
+            ".doc" or ".docx" => "description",
+            ".xls" or ".xlsx" => "table_chart",
+            ".jpg" or ".jpeg" or ".png" => "image",
+            _ => "insert_drive_file"
+        };
+    }
+    private async Task DownloadFile(DriveItem file)
+    {
+        try
+        {
+            using var stream = new MemoryStream();
+            // Get file stream from OneDrive
+            await OneDriveService.DownloadFile(file.Id, stream);
+
+            // Use JSRuntime for browser download
+            var fileName = file.Name;
+            var fileBytes = stream.ToArray();
+            await JSRuntime.InvokeVoidAsync("downloadFileFromStream", fileName, Convert.ToBase64String(fileBytes));
+
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "File downloaded successfully");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Failed to download file");
+        }
+    }
+    private async Task DeleteFile(DriveItem file)
+    {
+        var confirmed = await DialogService.Confirm(
+            $"Are you sure you want to delete '{file.Name}'?",
+            "Confirm Delete",
+            new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await OneDriveService.DeleteFile(file.Id);
+                await LoadFiles(currentFolderId);
+                NotificationService.Notify(NotificationSeverity.Success, "Success", "File deleted successfully");
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", "Failed to delete file");
+            }
+        }
+    }
+    private string currentFolderName;
+
+    private async Task OnFolderSelect(TreeEventArgs args)
+    {
+        try
+        {
+            var selectedItem = (Microsoft.Graph.Models.DriveItem)args.Value;
+            currentFolderId = selectedItem.Id;
+            currentFolderName = selectedItem.Name;
+            await LoadFiles(currentFolderId);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Failed to load folder contents");
+        }
+    }
+    private string FormatFileSize(long? bytes)
+    {
+        if (!bytes.HasValue) return "0 B";
+
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        int order = 0;
+        double size = bytes.Value;
+
+        while (size >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            size /= 1024;
+        }
+
+        return $"{size:0.##} {sizes[order]}";
+    }
+}

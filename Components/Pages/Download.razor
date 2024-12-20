@@ -1,0 +1,14 @@
+﻿@page "/download"
+@inject NavigationManager NavigationManager
+
+<h3>Download Ticket File</h3>
+<button @onclick="() => DownloadFile(ticketId)">Download File</button>
+
+@code {
+    private int ticketId = 74; // Replace with your logic to get the ticket ID
+
+    private void DownloadFile(int id)
+    {
+        NavigationManager.NavigateTo($"api/filedownload/{id}", true);
+    }
+}

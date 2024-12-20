@@ -1,0 +1,222 @@
+@page "/my-assigned-tickets"
+
+@attribute [Authorize]
+
+<PageTitle>My Assigned Tickets</PageTitle>
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="Engineer Assigned Tickets" TextStyle="TextStyle.H3" TagName="TagName.H1" style="margin: 0" />
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                <RadzenSplitButton Icon="get_app" Text="Export" Click="@ExportClick" Variant="Variant.Flat" Shade="Shade.Lighter">
+                    <RadzenSplitButtonItem Text="Excel" Value="xlsx" />
+                    <RadzenSplitButtonItem Text="CSV" Value="csv" />
+                </RadzenSplitButton>
+                <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick" Variant="Variant.Flat" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+    <RadzenTextBox Placeholder="Search ..." style="display: block; width: 50%" @oninput="@Search" aria-label="Search by all string columns" />
+    <RadzenRow>
+        <RadzenColumn SizeMD=12>
+            <RadzenDataGrid @ref="grid0" ColumnWidth="200px" ExpandMode=DataGridExpandMode.Single AllowFiltering="true" FilterMode="FilterMode.Advanced" AllowPaging="true" AllowSorting="true" ShowPagingSummary="true" PageSizeOptions=@(new int[]{5, 10, 20, 30})
+                            Data="@tblTickets" RowUpdate="@GridRowUpdate" RowCreate="@GridRowCreate" TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket"
+                            RowExpand="@GetChildData" RowSelect="@OpenTaskPageForEngineer">
+                <Columns>
+                    <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket" Property="TicketHeader" Title="Ticket Header">
+                        <EditTemplate Context="tblTicket">
+                            <RadzenFormField Text="Ticket Header" Variant="Variant.Filled">
+                                <ChildContent>
+                                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblTicket.TicketHeader" Name="TicketHeader" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket" Property="Date" Title="Date">
+                        <EditTemplate Context="tblTicket">
+                            <RadzenFormField Text="Date" Variant="Variant.Filled">
+                                <ChildContent>
+                                    <RadzenDatePicker DateFormat="MM/dd/yyyy" style="display: block; width: 100%" @bind-Value="@tblTicket.Date" Name="Date" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket" Property="TblCategory.Description" Title="Category">
+                        <EditTemplate Context="tblTicket">
+                            <RadzenFormField Text="Tbl Category" Variant="Variant.Filled">
+                                <ChildContent>
+                                    <RadzenDropDownDataGrid Data="@tblCategoriesForCategoryId" TextProperty="Description" ValueProperty="CategoryId" AllowClear=true
+                                                            style="display: block; width: 100%" @bind-Value="@tblTicket.CategoryId" Name="CategoryId" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket" Property="TblEngineer.Name" Title="Engineer">
+                        <EditTemplate Context="tblTicket">
+                            <RadzenFormField Text="Tbl Engineer" Variant="Variant.Filled">
+                                <ChildContent>
+                                    <RadzenDropDownDataGrid Data="@tblEngineersForEngineerId" TextProperty="Name" ValueProperty="Id" AllowClear=true
+                                                            style="display: block; width: 100%" @bind-Value="@tblTicket.EngineerId" Name="EngineerId" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket" Property="UserEmail" Title="User Email">
+                        <EditTemplate Context="tblTicket">
+                            <RadzenFormField Text="User Email" Variant="Variant.Filled">
+                                <ChildContent>
+                                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblTicket.UserEmail" Name="UserEmail" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket" Filterable="false" Sortable="false" Width="156px" TextAlign="TextAlign.Center">
+                        <EditTemplate Context="tblTicket">
+                            <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                          style="margin-top: 0.25rem; margin-right: 0.25rem; margin-bottom: 0.25rem"
+                                          Click=@(args => SaveButtonClick(args, tblTicket)) @onclick:stopPropagation="true" />
+                            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                          Click=@(args => CancelButtonClick(args, tblTicket)) @onclick:stopPropagation="true" />
+                        </EditTemplate>
+                        <Template Context="tblTicket">
+
+                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                          style="margin-top: 0.25rem; margin-right: 0.25rem; margin-bottom: 0.25rem"
+                                          Click=@(args => EditButtonClick(args, tblTicket)) @onclick:stopPropagation="true" />
+
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Medium" Disabled="@(tblTicket.StatusId==4)"
+                                          Shade="Shade.Lighter" Variant="Variant.Flat"
+                                          Click=@(args => GridDeleteButtonClick(args, tblTicket)) @onclick:stopPropagation="true" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket" Filterable="false" Sortable="false" Width="70px" TextAlign="TextAlign.Center">
+                        <Template Context="tblTicket">
+
+                            <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="pageview" Size="ButtonSize.Medium"
+                                          Shade="Shade.Lighter" Variant="Variant.Flat"
+                                          Click=@(args => OpenAttachmentForm(tblTicket)) @onclick:stopPropagation="true" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+                <Template Context="tblTicket">
+
+                    <RadzenStack Class="rz-my-8">
+                        <RadzenRow Gap="0" AlignItems="AlignItems.Center">
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenText Visible="@(tblTicketChild != null)" Text="ticket history" TextStyle="TextStyle.H4 " TagName="TagName.H2" style="margin: 0;color:blueviolet " />
+                            </RadzenColumn>
+                            @* <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                                    <RadzenButton Visible="@(tblTicketChild != null)" Icon="add_circle_outline" Text="Add" Click=@(args => TblReassignTicketsAddButtonClick(args,tblTicketChild)) />
+                                </RadzenStack>
+                            </RadzenColumn> *@
+                        </RadzenRow>
+                        <RadzenDataGrid ColumnWidth="200px" Visible="@(tblTicketChild != null)" @ref=TblReassignTicketsDataGrid AllowFiltering="true" FilterMode="Radzen.FilterMode.Advanced" AllowPaging="true" AllowSorting="true" ShowPagingSummary="true" PageSizeOptions=@(new int[]{5, 10, 20, 30})
+                                        Data="@tblTicketChild?.TblReassignTickets" TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblReassignTicket">
+                            <Columns>
+                               @*  <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblReassignTicket" Property="Id" Title="Id">
+                                </RadzenDataGridColumn> *@
+                                @* <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblReassignTicket" Property="TblTicket.TicketHeader" Title="Tbl Ticket">
+                                    <EditTemplate Context="tblReassignTicket">
+                                        <RadzenFormField Text="Tbl Ticket" Variant="Variant.Filled">
+                                            <ChildContent>
+                                                <RadzenDropDownDataGrid Data="@tblTicketsForTicketIdTblReassignTickets" TextProperty="TicketHeader" ValueProperty="TicketId"
+                                                                        style="display: block; width: 100%" @bind-Value="@tblReassignTicket.TicketId" Name="TicketId" />
+                                            </ChildContent>
+                                        </RadzenFormField>
+                                    </EditTemplate>
+                                </RadzenDataGridColumn> *@
+
+                                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblReassignTicket" Property="TblEngineer.Name" Title="Engineer">
+                                    <EditTemplate Context="tblReassignTicket">
+                                        <RadzenFormField Text="Engineer" Variant="Variant.Filled">
+                                            <ChildContent>
+                                                <RadzenDropDownDataGrid Data="@tblEngineersForEngineerIdTblReassignTickets" TextProperty="Name" ValueProperty="Id"
+                                                                        style="display: block; width: 100%" @bind-Value="@tblReassignTicket.EngineerId" Name="EngineerId" />
+                                            </ChildContent>
+                                        </RadzenFormField>
+                                    </EditTemplate>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblReassignTicket" Property="ReassignedDate" Title="Action Date">   
+                                    <EditTemplate Context="tblReassignTicket">
+                                        <RadzenFormField Text="Reassigned Date" Variant="Variant.Filled">
+                                            <ChildContent>
+                                                <RadzenDatePicker DateFormat="MM/dd/yyyy" style="display: block; width: 100%" @bind-Value="@tblReassignTicket.ReassignedDate" Name="ReassignedDate" />
+                                            </ChildContent>
+                                        </RadzenFormField>
+                                    </EditTemplate>
+                                </RadzenDataGridColumn>
+
+                                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblReassignTicket" Property="ReassignedBy" Title="Action By">
+                                    <EditTemplate Context="tblReassignTicket">
+                                        <RadzenFormField Text="Action By" Variant="Variant.Filled">
+                                            <ChildContent>
+                                                <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblReassignTicket.ReassignedBy" Name="ReassignedBy" />
+                                            </ChildContent>
+                                        </RadzenFormField>
+                                    </EditTemplate>
+                                </RadzenDataGridColumn>
+
+                                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblReassignTicket" Property="ProblemDescription" Title="Engineer Comment">
+                                    <EditTemplate Context="tblReassignTicket">
+                                        <RadzenFormField Text="Problem Description" Variant="Variant.Filled">
+                                            <ChildContent>
+                                                <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblReassignTicket.ProblemDescription" Name="ProblemDescription" />
+                                            </ChildContent>
+                                        </RadzenFormField>
+                                    </EditTemplate>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblReassignTicket" Property="TblStatus.Description" Title="Action Status">
+                                    <EditTemplate Context="tblReassignTicket">
+                                        <RadzenFormField Text="Status" Variant="Variant.Filled">
+                                            <ChildContent>
+                                                <RadzenDropDownDataGrid Data="@tblStatusesForStatusIdTblReassignTickets" TextProperty="Description" ValueProperty="StatusId"
+                                                                        style="display: block; width: 100%" @bind-Value="@tblReassignTicket.StatusId" Name="StatusId" />
+                                            </ChildContent>
+                                        </RadzenFormField>
+                                    </EditTemplate>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblReassignTicket" Property="UserEmail" Title="User Email">
+                                    <EditTemplate Context="tblReassignTicket">
+                                        <RadzenFormField Text="User Email" Variant="Variant.Filled">
+                                            <ChildContent>
+                                                <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblReassignTicket.UserEmail" Name="UserEmail" />
+                                            </ChildContent>
+                                        </RadzenFormField>
+                                    </EditTemplate>
+                                </RadzenDataGridColumn>
+
+                                
+
+                                @* <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblReassignTicket" Filterable="false" Sortable="false" Width="70px" TextAlign="TextAlign.Center">
+                                    <EditTemplate Context="tblReassignTicketChild">
+                                        <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                                      style="margin-top: 0.25rem; margin-right: 0.25rem; margin-bottom: 0.25rem"
+                                                      Click=@(args => TblReassignTicketsSaveButtonClick(args, tblReassignTicketChild)) @onclick:stopPropagation="true" />
+                                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                                      Click=@(args => TblReassignTicketsCancelButtonClick(args, tblReassignTicketChild)) @onclick:stopPropagation="true" />
+                                    </EditTemplate>
+                                    <Template Context="tblReassignTicketChild">
+
+                                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium"
+                                                      style="margin-top: 0.25rem; margin-right: 0.25rem; margin-bottom: 0.25rem"
+                                                      Click=@(args => TblReassignTicketsEditButtonClick(args, tblReassignTicketChild)) @onclick:stopPropagation="true" />
+
+                                        <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Medium" Shade="Shade.Lighter" Variant="Variant.Flat"
+                                                      Click=@(args => TblReassignTicketsDeleteButtonClick(args, tblReassignTicketChild)) @onclick:stopPropagation="true" />
+                                    </Template>
+
+
+
+                                </RadzenDataGridColumn> *@
+                            </Columns>
+                        </RadzenDataGrid>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGrid>
+
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>

@@ -1,0 +1,69 @@
+﻿@page "/email-management"
+@using RhinoTicketingSystem.Services
+
+@using System.Net.Mail;
+@using System.Net;
+@using Microsoft.Extensions.Configuration;
+
+
+@inject EmailService EmailService
+@inject NotificationService NotificationService
+
+<RadzenCard>
+    <RadzenStack Spacing="2">
+        <RadzenText TextStyle="TextStyle.H5">Send Email</RadzenText>
+
+        <RadzenLabel Text="From" />
+        <RadzenTextBox @bind-Value="@fromEmail" ReadOnly="true" Style="width: 100%;" />
+
+        <RadzenLabel Text="To" />
+        <RadzenTextBox @bind-Value="@toEmail" Style="width: 100%;" />
+
+        <RadzenLabel Text="CC" />
+        <RadzenTextBox @bind-Value="@ccEmail" Style="width: 100%;" />
+
+        <RadzenLabel Text="Subject" />
+        <RadzenTextBox @bind-Value="@subject" Style="width: 100%;" />
+
+        <RadzenLabel Text="Message" />
+        <RadzenTextArea @bind-Value="@messageBody" Style="width: 100%; height: 200px;" />
+
+        <RadzenFileInput @bind-Value="@attachments" Multiple="true" />
+
+        <RadzenButton Text="Send" Icon="send" ButtonStyle="ButtonStyle.Primary"
+                      Click="@SendEmail" Style="margin-top: 20px;" />
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    private string fromEmail = "rhinoticket@gmail.com";
+    private string toEmail;
+    private string subject;
+    private string messageBody;
+    private string ccEmail;
+    private List<Attachment> emailAttachments = new List<Attachment>();
+    private IEnumerable<IBrowserFile> attachments;
+
+    private async Task SendEmail()
+    {
+        try
+        {
+            await EmailService.SendEmailAsync(toEmail, ccEmail, subject, messageBody, emailAttachments);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "Email sent successfully");
+            ClearForm();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+    }
+    private void ClearForm()
+    {
+        toEmail = string.Empty;
+        ccEmail = string.Empty;
+        subject = string.Empty;
+        messageBody = string.Empty;
+        emailAttachments.Clear();
+        StateHasChanged();
+    }
+}

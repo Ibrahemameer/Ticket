@@ -1,0 +1,32 @@
+@inject Microsoft.Extensions.Localization.IStringLocalizer<AddTblCategory> L
+@page "/add-tbl-category"
+@attribute [Authorize]
+
+<PageTitle>Add TblCategory</PageTitle>
+    <RadzenColumn SizeMD=12>
+        <RadzenAlert Shade="Shade.Lighter" Variant="Variant.Flat" Size="AlertSize.Small" AlertStyle="AlertStyle.Danger" Visible="@errorVisible">Cannot save TblCategory</RadzenAlert>
+        <RadzenTemplateForm TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblCategory" Data="@tblCategory" Visible="@(tblCategory != null)" Submit="@FormSubmit">
+          <RadzenStack>
+            <RadzenFormField Text="Description" Variant="Variant.Filled">
+                  <ChildContent>
+                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblCategory.Description" Name="Description" />
+              </ChildContent>
+            </RadzenFormField>
+            <RadzenFormField Text="Notes1" Variant="Variant.Filled">
+                  <ChildContent>
+                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblCategory.Notes1" Name="Notes1" />
+              </ChildContent>
+            </RadzenFormField>
+            <RadzenFormField Text="Notes2" Variant="Variant.Filled">
+                  <ChildContent>
+                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblCategory.Notes2" Name="Notes2" />
+              </ChildContent>
+            </RadzenFormField>
+          </RadzenStack>
+          <RadzenStack style="margin-top:1rem;" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" Icon="save" Text="Save" Variant="Variant.Flat" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Variant="Variant.Flat" Click="@CancelButtonClick"  />
+          </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenColumn>
+

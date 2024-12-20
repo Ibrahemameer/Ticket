@@ -1,0 +1,43 @@
+@inject Microsoft.Extensions.Localization.IStringLocalizer<EditTblEngineer> L
+@page "/edit-tbl-engineer"
+@attribute [Authorize]
+
+<PageTitle>Edit TblEngineer</PageTitle>
+
+    <RadzenColumn SizeMD=12>
+        <RadzenAlert Shade="Shade.Lighter" Variant="Variant.Flat" Size="AlertSize.Small" AlertStyle="AlertStyle.Danger" Visible="@errorVisible">Cannot save TblEngineer</RadzenAlert>
+        <RadzenTemplateForm TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblEngineer" Data="@tblEngineer" Visible="@(tblEngineer != null)" Submit="@FormSubmit">
+          <RadzenStack>
+            <RadzenFormField Text="Engineer Code" Variant="Variant.Filled">
+                  <ChildContent>
+                    <RadzenNumeric style="display: block; width: 100%" @bind-Value="@tblEngineer.EngineerCode" Name="EngineerCode" />
+                    
+                    <RadzenRequiredValidator Component="EngineerCode" Style="position:absolute" Text="Engineer Code Is Required">
+                    </RadzenRequiredValidator>
+              </ChildContent>
+            </RadzenFormField>
+            <RadzenFormField Text="Name" Variant="Variant.Filled">
+                  <ChildContent>
+                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblEngineer.Name" Name="Name" />
+              </ChildContent>
+            </RadzenFormField>
+            <RadzenFormField Text="Created Date" Variant="Variant.Filled">
+                  <ChildContent>
+                    <RadzenDatePicker DateFormat="MM/dd/yyyy" style="display: block; width: 100%" @bind-Value="@tblEngineer.CreatedDate" Name="CreatedDate" />
+              </ChildContent>
+            </RadzenFormField>
+            <RadzenFormField Text="Engineer Email..." Variant="Variant.Filled">
+                  <ChildContent>
+                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblEngineer.EngEmail" Name="EngEmail" />
+                    <RadzenRequiredValidator Component="EngEmail" Style="position:absolute" Text="Engineer Email Is Required" Popup="true">
+                    </RadzenRequiredValidator>
+              </ChildContent>
+            </RadzenFormField>
+          </RadzenStack>
+          <RadzenStack style="margin-top:1rem;" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" Icon="save" Text="Save" Variant="Variant.Flat" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Variant="Variant.Flat" Click="@CancelButtonClick"  />
+          </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenColumn>
+

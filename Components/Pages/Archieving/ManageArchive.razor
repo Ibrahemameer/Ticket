@@ -1,0 +1,82 @@
+﻿@page "/manage-archive"
+@using System.IO
+@using Radzen
+@using Radzen.Blazor
+@using RhinoTicketingSystem.Components.Dialogs
+@attribute [Authorize]
+
+<RadzenCard>
+    <RadzenBreadCrumb>
+        <RadzenBreadCrumbItem>
+            <ChildContent>
+                <a href="#" @onclick="@(() => NavigateToFolder(rootPath))" @onclick:preventDefault style="cursor: pointer;">
+                    Root
+                </a>
+            </ChildContent>
+        </RadzenBreadCrumbItem>
+        @for (int i = 0; i < currentPath.Count; i++)
+        {
+            var index = i;
+            var fullPath = GetPathUpToIndex(index);
+            <RadzenBreadCrumbItem>
+                <ChildContent>
+                    <a href="#" @onclick="@(() => NavigateToFolder(fullPath))" @onclick:preventDefault style="cursor: pointer;">
+                        @currentPath[index]
+                    </a>
+                </ChildContent>
+            </RadzenBreadCrumbItem>
+        }
+    </RadzenBreadCrumb>
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="1rem" Class="rz-mb-6">
+        <RadzenText TextStyle="TextStyle.H5">Archive Management</RadzenText>
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
+            <RadzenButton Icon="create_new_folder" Text="New Folder" Click="@CreateNewFolder" />
+            <RadzenButton Icon="cloud_upload" Text="Upload Files" Click="@OnUploadClick" />
+        </RadzenStack>
+    </RadzenStack>
+
+    <RadzenRow>
+        <RadzenColumn Size="12" SizeMD="4">
+            <RadzenTree Data="@directories" Change="@OnDirectorySelect">
+                <RadzenTreeLevel>
+                    <Template Context="data">
+                        <div>
+                            <RadzenIcon Icon="folder" Style="margin-right: 8px;" />
+                            @((data.Value as System.IO.DirectoryInfo)?.Name)
+                        </div>
+                    </Template>
+                </RadzenTreeLevel>
+            </RadzenTree>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="8">
+            <RadzenDataGrid Data="@files" TItem="System.IO.FileInfo" AllowFiltering="true" AllowSorting="true">
+                <Columns>
+                    <RadzenDataGridColumn TItem="System.IO.FileInfo" Property="Name" Title="Name">
+                        <Template Context="file">
+                            <RadzenIcon Icon="insert_drive_file" Style="margin-right: 8px;" />
+                            @file.Name
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="System.IO.FileInfo" Property="Length" Title="Size">
+                        <Template Context="file">
+                            @FormatFileSize(file.Length)
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="System.IO.FileInfo" Property="LastWriteTime" Title="Modified" />
+                    <RadzenDataGridColumn TItem="System.IO.FileInfo" Title="Actions" TextAlign="TextAlign.Center">
+                        <Template Context="file">
+                            <RadzenButton Icon="download" Size="ButtonSize.Small" Click="@(() => DownloadFile(file))" />
+                            <AuthorizeView Roles="Admin,FileManager">
+                                <Authorized>
+                                    <RadzenButton Icon="delete" Size="ButtonSize.Small" Click="@(() => DeleteFile(file))" ButtonStyle="ButtonStyle.Danger" />
+                                </Authorized>
+                            </AuthorizeView>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenCard>
+

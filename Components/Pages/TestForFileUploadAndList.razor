@@ -1,0 +1,112 @@
+﻿@page "/Test-File-Upload"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Forms
+@inject IWebHostEnvironment env
+
+<h3>File Upload</h3>
+
+@attribute [Authorize]
+<RadzenColumn SizeMD=12>
+    <RadzenAlert Shade="Shade.Lighter" Variant="Variant.Flat" Size="AlertSize.Small" AlertStyle="AlertStyle.Danger" Visible="@errorVisible">Cannot save TblTicket</RadzenAlert>
+    <RadzenTemplateForm TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket" Data="@tblTicket" Visible="@(tblTicket != null && canEdit)" Submit="()=> FormSubmit2(Security.User.Email)">
+        <RadzenRow style="margin-bottom: 1rem">
+            <RadzenColumn SizeMD="3">
+                <RadzenLabel Text="Ticket Header"  Component="TicketHeader" style="width: 100%" />
+            </RadzenColumn>
+            <RadzenColumn SizeMD="9">
+                <RadzenTextBox style="display: block; width: 100%" Disabled="true" @bind-Value="@tblTicket.TicketHeader" Name="TicketHeader" />
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow style="margin-bottom: 1rem">
+            <InputFile style="display: block; width: 100%" OnChange="HandleFileSelected" multiple />
+        </RadzenRow>
+        <RadzenRow style="margin-bottom: 1rem">
+            <RadzenColumn SizeMD="3">
+                <RadzenLabel Text="User Email" Component="UserEmail" style="width: 100%" />
+            </RadzenColumn>
+            <RadzenColumn SizeMD="9">
+                <RadzenTextBox Disabled="true" Value="@(Security.User.Name)" Style="width:100%" />
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+            <RadzenButton ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" Icon="save" Text="Save" Variant="Variant.Flat" />
+            <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Variant="Variant.Flat" Click="@CancelButtonClick" />
+        </RadzenStack>
+    </RadzenTemplateForm>
+</RadzenColumn>
+
+
+
+
+@if (!string.IsNullOrEmpty(uploadMessage))
+{
+    <p>@uploadMessage</p>
+}
+
+@code {
+    protected List<FileAttchment> uploadedFilesPath = new List<FileAttchment>();
+    private string uploadMessage;
+
+    // Define allowed file types and size limit
+    private readonly HashSet<string> allowedFileTypes = new HashSet<string>
+    {
+        ".pdf", ".docx", ".xlsx", ".jpg", ".png" // Add more as needed
+    };
+
+    private const long maxFileSizePerFile = 10 * 1024 * 1024; // 10 MB per file
+    private const long maxTotalSize = 10 * 1024 * 1024; // 20 MB total for all files
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        long totalSize = 0;
+
+        // First, validate the total size and individual file sizes
+        foreach (var file in e.GetMultipleFiles())
+        {
+            // Validate individual file size
+            if (file.Size > maxFileSizePerFile)
+            {
+                uploadMessage = $"File '{file.Name}' exceeds the maximum individual size of {maxFileSizePerFile / (1024 * 1024)} MB.";
+                return; // Skip this file
+            }
+
+            // Accumulate total size
+            totalSize += file.Size;
+
+            // Validate file type
+            var fileExtension = Path.GetExtension(file.Name).ToLowerInvariant();
+            if (!allowedFileTypes.Contains(fileExtension))
+            {
+                uploadMessage = $"File type '{fileExtension}' is not allowed.";
+                return; // Skip this file
+            }
+        }
+
+        // Validate total size
+        if (totalSize > maxTotalSize)
+        {
+            uploadMessage = $"The total upload size exceeds the maximum limit of {maxTotalSize / (1024 * 1024)} MB.";
+            return; // Skip processing
+        }
+
+        // Proceed with uploading files if validation passes
+        foreach (var file in e.GetMultipleFiles())
+        {
+            FileAttchment file1 = new FileAttchment();
+            var filePath = Path.Combine(env.WebRootPath, "Upload", file.Name);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.OpenReadStream(maxFileSizePerFile).CopyToAsync(stream); // Specify max allowed size here
+            }
+
+            file1.Filename = file.Name;
+            file1.FilePath = filePath;
+
+            uploadedFilesPath.Add(file1);
+        }
+
+        CreateAttchement();
+        uploadMessage = "Files uploaded successfully!";
+    }
+}

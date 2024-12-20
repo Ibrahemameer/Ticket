@@ -1,0 +1,259 @@
+﻿@page "/manage-mega-archive"
+@using CG.Web.MegaApiClient
+@using RhinoTicketingSystem.Components.Dialogs
+@using RhinoTicketingSystem.Services
+@using Microsoft.JSInterop
+@using Radzen.Blazor
+@inject MegaUploadService MegaService
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject DialogService DialogService
+
+<RadzenCard>
+    <RadzenStack>
+        <RadzenStack>
+            <RadzenBreadCrumb Style="margin-bottom: 1rem;">
+                <RadzenBreadCrumbItem>
+                    <RadzenButton Text="Root"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@(() => NavigateToFolder(""))"
+                                  Icon="home" />
+                </RadzenBreadCrumbItem>
+                @foreach (var folder in currentPath)
+                {
+                    var currentFolder = folder;
+                    <RadzenBreadCrumbItem>
+                        <RadzenButton Text="@currentFolder"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Click="@(() => NavigateToFolder(currentFolder))"
+                                      Icon="folder" />
+                    </RadzenBreadCrumbItem>
+                }
+            </RadzenBreadCrumb>
+        </RadzenStack>
+
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="1rem" Class="rz-mb-6">
+            <RadzenText TextStyle="TextStyle.H5">MEGA Archive Management</RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
+                <RadzenButton Icon="create_new_folder" Text="New Folder" Click="@CreateNewFolder" />
+                <RadzenButton Icon="cloud_upload" Text="Upload Files" Click="@OnUploadClick" />
+            </RadzenStack>
+        </RadzenStack>
+
+        <RadzenDataGrid Data="@files"
+                        TItem="INode"
+                        AllowFiltering="true"
+                        AllowSorting="true"
+                        AllowPaging="true"
+                        PageSize="10">
+            <Columns>
+                <RadzenDataGridColumn TItem="INode" Property="Name" Title="Name">
+                    <Template Context="data">
+                        @if (data.Type == NodeType.Directory)
+                        {
+                            <RadzenIcon Icon="folder" />
+                        }
+                        else
+                        {
+                            <RadzenIcon Icon="insert_drive_file" />
+                        }
+                        @data.Name
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="INode" Property="Size" Title="Size">
+                    <Template Context="file">
+                        @FormatFileSize(file.Size)
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="INode" Property="CreationDate" Title="Created" />
+                <RadzenDataGridColumn TItem="INode" Title="Actions" TextAlign="TextAlign.Center">
+                    <Template Context="file">
+                        <RadzenButton Icon="download" Size="ButtonSize.Small" Click="@(() => DownloadFile(file))" />
+                        <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(() => RenameNode(file))" />
+                        <RadzenButton Icon="delete" Size="ButtonSize.Small" Click="@(() => DeleteNode(file))" ButtonStyle="ButtonStyle.Danger" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    private List<string> currentPath = new List<string>();
+    private IEnumerable<INode> files;
+    private string newName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCurrentFolder();
+    }
+
+    private async Task LoadCurrentFolder()
+    {
+        try
+        {
+            string path = string.Join("/", currentPath);
+            var allNodes = await MegaService.GetDirectories(path);
+            files = allNodes?.ToList() ?? new List<INode>();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Failed to load folder contents");
+        }
+    }
+
+    private async Task NavigateToFolder(string folder)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(folder))
+            {
+                currentPath.Clear();
+            }
+            else if (!currentPath.Contains(folder))
+            {
+                currentPath.Add(folder);
+            }
+            else
+            {
+                int index = currentPath.IndexOf(folder);
+                currentPath = currentPath.Take(index + 1).ToList();
+            }
+            await LoadCurrentFolder();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Navigation Failed", ex.Message);
+        }
+    }
+
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+        int counter = 0;
+        decimal number = (decimal)bytes;
+        while (Math.Round(number / 1024) >= 1)
+        {
+            number /= 1024;
+            counter++;
+        }
+        return string.Format("{0:n1}{1}", number, suffixes[counter]);
+    }
+
+    private async Task CreateNewFolder()
+    {
+        try
+        {
+            var folderName = await DialogService.OpenAsync<CreateFolderDialog>("Create New Folder");
+            if (!string.IsNullOrEmpty(folderName?.ToString()))
+            {
+                string path = string.Join("/", currentPath);
+                await MegaService.CreateFolder(folderName.ToString(), path);
+                await LoadCurrentFolder();
+                NotificationService.Notify(NotificationSeverity.Success, "Success", "Folder created successfully");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+    }
+
+    private async Task OnUploadClick()
+    {
+        try
+        {
+            await DialogService.OpenAsync<UploadDialog>("Upload Files",
+            new Dictionary<string, object>() { { "CurrentPath", string.Join("/", currentPath) } },
+            new DialogOptions() { Width = "700px" });
+            await LoadCurrentFolder();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Upload Failed", ex.Message);
+        }
+    }
+
+    private async Task DownloadFile(INode file)
+    {
+        try
+        {
+            using (var stream = await MegaService.DownloadFile(file))
+            {
+                var fileName = file.Name;
+                await JSRuntime.InvokeVoidAsync("downloadFileFromStream", fileName, stream);
+                NotificationService.Notify(NotificationSeverity.Success, "Download Complete", $"{fileName} has been downloaded successfully.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Download Failed", ex.Message);
+        }
+    }
+
+    private async Task DeleteNode(INode node)
+    {
+        try
+        {
+            var confirmResult = await DialogService.Confirm(
+            $"Are you sure you want to delete {node.Name}?",
+            "Confirm Delete",
+            new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+
+            if (confirmResult ?? false)
+            {
+                await MegaService.DeleteNode(node);
+                await LoadCurrentFolder();
+                NotificationService.Notify(NotificationSeverity.Success, "Success", $"{node.Name} deleted successfully");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Delete Failed", ex.Message);
+        }
+    }
+
+    private async Task RenameNode(INode node)
+    {
+        try
+        {
+            var result = await DialogService.OpenAsync("Rename", ds =>
+    @<div>
+        <RadzenCard>
+            <RadzenStack Spacing="2">
+                <RadzenTextBox @bind-Value="@newName" Placeholder="Enter new name" />
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                    <RadzenButton Text="Cancel" Click="() => ds.Close(null)" ButtonStyle="ButtonStyle.Light" />
+                    <RadzenButton Text="Save" Click="() => ds.Close(newName)" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </div>,
+        new DialogOptions() { Width = "300px" });
+
+            if (!string.IsNullOrEmpty(result?.ToString()))
+            {
+                await MegaService.RenameNode(node, result.ToString());
+                await LoadCurrentFolder();
+                NotificationService.Notify(NotificationSeverity.Success, "Success", "Renamed successfully");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Rename Failed", ex.Message);
+        }
+    }
+    private string folderName;
+
+    private async Task CreateFolder()
+    {
+        if (!string.IsNullOrEmpty(folderName))
+        {
+            DialogService.Close(folderName);
+        }
+    }
+}

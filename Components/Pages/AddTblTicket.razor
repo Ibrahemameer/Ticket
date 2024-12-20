@@ -1,0 +1,69 @@
+@page "/add-tbl-ticket"
+
+@using RhinoTicketingSystem.Controllers
+
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Forms
+@inject IWebHostEnvironment env
+
+
+
+<PageTitle>Describe Your Issue Here</PageTitle>
+@attribute [Authorize]
+<RadzenColumn SizeMD=12>
+    <RadzenAlert Shade="Shade.Lighter" Variant="Variant.Flat" Size="AlertSize.Small" AlertStyle="AlertStyle.Danger" Visible="@errorVisible">Cannot save TblTicket</RadzenAlert>
+    <RadzenTemplateForm  TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket" Data="@tblTicket" Visible="@(tblTicket != null && canEdit)" Submit="()=> FormSubmit2(Security.User.Email)">
+        <RadzenRow style="margin-bottom: 1rem">
+            <RadzenColumn SizeMD="3">
+                <RadzenLabel Text="Ticket Header" Component="TicketHeader" style="width: 100%" />
+            </RadzenColumn>
+            <RadzenColumn SizeMD="9">
+                <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblTicket.TicketHeader" Name="TicketHeader" />
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow style="margin-bottom: 1rem">
+            <RadzenColumn SizeMD="3">
+                <RadzenLabel Text="Description " Component="TicketDescription" style="width: 100%" />
+            </RadzenColumn>
+            <RadzenColumn SizeMD="9">
+                <RadzenTextArea style="display: block; width: 100%" @bind-Value="@tblTicket.TicketDescription" Name="TicketDescription" />
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow style="margin-bottom: 1rem">
+            <RadzenColumn SizeMD="3">
+                <RadzenLabel Text="User Email" Component="UserEmail" style="width: 100%" />
+            </RadzenColumn>
+            <RadzenColumn SizeMD="9">
+                <RadzenTextBox Disabled="true" Value="@(Security.User.Name)" Style="width:100%" />
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+            <RadzenButton ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" Icon="save" Text="Save" Variant="Variant.Flat" />
+            <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Variant="Variant.Flat" Click="@CancelButtonClick" />
+        </RadzenStack>
+    </RadzenTemplateForm>
+</RadzenColumn>
+
+    @code {
+
+    [Inject]
+    private UploadController upload { get; set; }
+
+
+     private List<string> uploadedFiles = new();
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        foreach (var file in e.GetMultipleFiles())
+        {
+            var filePath = Path.Combine(env.WebRootPath, "Upload", file.Name);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.OpenReadStream().CopyToAsync(stream);
+            }
+            uploadedFiles.Add(file.Name);
+        }
+    }
+
+    }
+

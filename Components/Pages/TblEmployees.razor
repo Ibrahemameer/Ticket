@@ -1,0 +1,55 @@
+@inject Microsoft.Extensions.Localization.IStringLocalizer<TblEmployees> L
+@page "/tbl-employees"
+@attribute [Authorize]
+
+<PageTitle>TblEmployees</PageTitle>
+<RadzenStack>
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText Text="TblEmployees" TextStyle="TextStyle.H3" TagName="TagName.H1" style="margin: 0" />
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                <RadzenSplitButton Icon="get_app" Text="Export" Click="@ExportClick" Variant="Variant.Flat" Shade="Shade.Lighter">
+                    <RadzenSplitButtonItem Text="Excel" Value="xlsx" />
+                    <RadzenSplitButtonItem Text="CSV" Value="csv" />
+                </RadzenSplitButton>
+                <RadzenButton Icon="add_circle_outline" Text="Add" Click="@AddButtonClick" Variant="Variant.Flat" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+    <RadzenTextBox Placeholder="Search ..." style="display: block; width: 100%" @oninput="@Search" aria-label="Search by all string columns" />
+    <RadzenRow>
+      <RadzenColumn SizeMD=12>
+        <RadzenDataGrid @ref="grid0" ColumnWidth="200px"   AllowFiltering="true" FilterMode="FilterMode.Advanced" AllowPaging="true" AllowSorting="true" ShowPagingSummary="true" PageSizeOptions=@(new int[]{5, 10, 20, 30})
+            Data="@tblEmployees" TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblEmployee" RowSelect="@EditRow">
+            <Columns>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblEmployee" Property="Id" Title="Id">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblEmployee" Property="PersonnelNumber" Title="Personnel Number">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblEmployee" Property="Name" Title="Name">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblEmployee" Property="Sector" Title="Sector">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblEmployee" Property="Site" Title="Site">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblEmployee" Property="Center" Title="Center">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblEmployee" Property="Email" Title="Email">
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblEmployee" Filterable="false" Sortable="false" Width="70px" TextAlign="TextAlign.Center">
+                    <Template Context="tblEmployee">
+
+                        <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Medium"
+                            Shade="Shade.Lighter" Variant="Variant.Flat"
+                            Click=@(args => GridDeleteButtonClick(args, tblEmployee)) @onclick:stopPropagation="true" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+
+        </RadzenDataGrid>
+
+    </RadzenColumn>
+  </RadzenRow>
+</RadzenStack>

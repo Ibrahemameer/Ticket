@@ -1,0 +1,164 @@
+@page "/dashboard"
+@using RhinoTicketingSystem.Models.db_a79800_ticket
+
+@attribute [Authorize]
+
+
+<RadzenContent Container="main">
+    <ChildContent>
+        <RadzenIcon Icon="assessment">
+        </RadzenIcon>
+        <RadzenHeading Size="H1" style="display: inline-block ; color:blue" Text="Rhino Ticketing System Dashboard">
+        </RadzenHeading>
+        <RadzenHeading Size="H2" Text="Monthly Stats">
+        </RadzenHeading>
+
+        <RadzenRow class="row">
+            <RadzenColumn class="col-md-12 col-xl-3 col-lg-6">
+                <RadzenCard Style="margin-bottom: 16px">
+                    <ChildContent>
+                        <div class="row">
+                            <div class="col-4 align-items-center d-flex">
+                                <RadzenIcon Icon="smart_button" style="background-color: #68d5c8; font-size: 48px; height: 64px; width: 64px">
+                                </RadzenIcon>
+                            </div>
+                            <div class="col-sm-8">
+                                <RadzenHeading Size="H4" style="margin-bottom: 0px; text-align: right" Text="All Tickets">
+                                </RadzenHeading>
+                                <RadzenHeading Size="H4" style="color: #88989b; font-size: 12px; margin-bottom: 0px; text-align: right" Text="LAST MONTH">
+                                </RadzenHeading>
+                                <RadzenHeading Size="H4" style="color: #68d5c8; font-size: 24px; margin-bottom: 0px; margin-top: 13px; text-align: right" Text="@(tblTicketForDashboard?.Where(p=>p.TicketId>0).Count().ToString())">
+                                </RadzenHeading>
+                            </div>
+                        </div>
+                    </ChildContent>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn class="col-md-12 col-xl-3 col-lg-6">
+                <RadzenCard style="margin-bottom: 16px">
+                    <ChildContent>
+                        <div class="row">
+                            <div class="col-4 align-items-center d-flex">
+                                <RadzenIcon Icon="shopping_cart" style="background-color: #f9777f; font-size: 48px; height: 64px; width: 64px">
+                                </RadzenIcon>
+                            </div>
+                            <div class="col-sm-8">
+                                <RadzenHeading Size="H4" style="margin-bottom: 0px; text-align: right" Text="Pending Tickets">
+                                </RadzenHeading>
+                                <RadzenHeading Size="H4" style="color: #88989b; font-size: 12px; margin-bottom: 0px; text-align: right" Text="LAST MONTH">
+                                </RadzenHeading>
+                                <RadzenHeading Size="H4" style="color: #f9777f; font-size: 24px; margin-bottom: 0px; margin-top: 13px; text-align: right" Text="@(tblTicketForDashboard?.Where(p=>p.StatusId!=null&&p.StatusId!=4).Count().ToString())">
+                                </RadzenHeading>
+                            </div>
+                        </div>
+                    </ChildContent>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn class="col-md-12 col-xl-3 col-lg-6">
+                <RadzenCard style="margin-bottom: 16px">
+                    <ChildContent>
+                        <div class="row">
+                            <div class="col-4 align-items-center d-flex">
+                                <RadzenIcon Icon="account_balance_wallet" style="background-color: #ff6d41; font-size: 48px; height: 64px; width: 64px">
+                                </RadzenIcon>
+                            </div>
+                            <div class="col-sm-8">
+                                <RadzenHeading Size="H4" style="margin-bottom: 0px; text-align: right" Text="Solved Tickets">
+                                </RadzenHeading>
+                                <RadzenHeading Size="H4" style="color: #88989b; font-size: 12px; margin-bottom: 0px; text-align: right" Text="LAST MONTH">
+                                </RadzenHeading>
+                                <RadzenHeading Size="H4" style="color: #ff6d41; font-size: 24px; margin-bottom: 0px; margin-top: 13px; text-align: right" Text="@(tblTicketForDashboard?.Where(p=>p.StatusId==4).Count().ToString())">
+                                </RadzenHeading>
+                            </div>
+                        </div>
+                    </ChildContent>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn class="col-md-12 col-xl-3 col-lg-6">
+                <RadzenCard style="margin-bottom: 16px">
+                    <ChildContent>
+                        <div class="row">
+                            <div class="col-4 align-items-center d-flex">
+                                <RadzenIcon Icon="thumb_up" style="background-color: #479cc8; font-size: 48px; height: 64px; width: 64px">
+                                </RadzenIcon>
+                            </div>
+                            <div class="col-sm-8">
+                                <RadzenHeading Size="H4" style="margin-bottom: 0px; text-align: right" Text="Closing Tickets Rate">
+                                </RadzenHeading>
+                                <RadzenHeading Size="H4" style="color: #88989b; font-size: 12px; margin-bottom: 0px; text-align: right" Text="LAST MONTH">
+                                </RadzenHeading>
+                                <RadzenHeading Size="H4" style="color: #479cc8; font-size: 24px; margin-bottom: 0px; margin-top: 13px; text-align: right" Text="@(finishTicketsRate.ToString("P"))">
+                                </RadzenHeading>
+                            </div>
+                        </div>
+                    </ChildContent>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenHeading Size="H2" Text="IT Members Performance">
+        </RadzenHeading>
+        <RadzenRow>
+            <RadzenCard Variant="Variant.Outlined" Style="width: 100%;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                    <RadzenCheckBox @bind-Value="@showDataLabels" Name="dataLabels"></RadzenCheckBox>
+                    <RadzenLabel Text="Show Data Labels" Component="dataLabels" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenColumn>
+                <RadzenCard>
+                    <ChildContent>
+                        <RadzenChart ColorScheme="ColorScheme.Palette">
+                            <ChildContent>
+                                <RadzenBarSeries Title="Number of tickets" CategoryProperty="Engineer" Data="@countTickets" ValueProperty="Tickets" />
+                                <RadzenValueAxis min="0" Max="@countTickets.Select(p=>p.Tickets).Count()" Step="1"></RadzenValueAxis>
+                                @* <RadzenSeriesDataLabels Visible="@showDataLabels"/> *@
+                            </ChildContent>
+                        </RadzenChart>
+                    </ChildContent>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn>
+                <RadzenCard>
+                    <ChildContent>
+                        <RadzenChart ColorScheme="ColorScheme.Pastel">
+                           <ChildContent>
+                                <RadzenPieSeries Title="Number of tickets" CategoryProperty="Engineer" Data="@countTickets" ValueProperty="Tickets" />
+                                @* <RadzenValueAxis min="0" Max="@countTickets.Select(p=>p.Tickets).Count()" Step="1"></RadzenValueAxis> *@
+                                <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                            </ChildContent>
+                        </RadzenChart>
+                    </ChildContent>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+
+    </ChildContent>
+</RadzenContent>
+
+
+@code {
+    protected IList<RhinoTicketingSystem.Models.db_a79800_ticket.TblEngineer> listOfEngineers;
+    protected IList<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket> listOfTickets;
+     bool showDataLabels = false;
+
+    class DataItem
+    {
+        public string Engineer { get; set; }
+        public int Tickets { get; set; }
+    }
+    List<DataItem> countTickets = new List<DataItem>();
+    
+    void GetTicketsByEngineer()
+    {
+        foreach (var eng in listOfEngineers)
+        {
+            DataItem item = new DataItem();
+            item.Engineer = eng.Name;
+            item.Tickets = listOfTickets.Where(p => p.EngineerId == eng.Id).Count();
+
+        countTickets.Add(item);
+        }
+    }
+}

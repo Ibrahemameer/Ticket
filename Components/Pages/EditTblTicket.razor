@@ -1,0 +1,132 @@
+@page "/edit-tbl-ticket"
+
+<PageTitle>Edit Ticket</PageTitle>
+@attribute [Authorize]
+<RadzenRow>
+    <RadzenColumn SizeMD="9">
+    <RadzenLabel style="font-weight: bold" Text="Item no longer available." Visible="@(!canEdit)" />
+    </RadzenColumn>
+    <RadzenColumn SizeMD="3">
+    <RadzenButton ButtonStyle="ButtonStyle.Secondary" style="margin-bottom: 20px" Text="Close" Visible="@(!canEdit)" Click="@CancelButtonClick" />
+    </RadzenColumn>
+</RadzenRow>
+<RadzenRow>
+    <RadzenColumn SizeMD="9">
+    <RadzenLabel style="font-weight: bold" Text="Another user has made conflicting changes to one or more of the fields you have modified. Please reload." Visible="@hasChanges" />
+    </RadzenColumn>
+    <RadzenColumn SizeMD="3">
+    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="autorenew" style="margin-bottom: 20px" Text="Reload" Visible="@hasChanges" Click="@ReloadButtonClick" />
+    </RadzenColumn>
+</RadzenRow>
+
+    <RadzenColumn SizeMD=12>
+        <RadzenAlert Shade="Shade.Lighter" Variant="Variant.Flat" Size="AlertSize.Small" AlertStyle="AlertStyle.Danger" Visible="@errorVisible">Cannot save TblTicket</RadzenAlert>
+        <RadzenTemplateForm TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket" Data="@tblTicket" Visible="@(tblTicket != null && canEdit)" Submit="@FormSubmit">
+            @* <RadzenRow style="margin-bottom: 1rem">
+                <RadzenColumn SizeMD="3">
+                    <RadzenLabel Text="Ticket Number" Component="TicketNumber" style="width: 100%" />
+                </RadzenColumn>
+                <RadzenColumn SizeMD="9">
+                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblTicket.TicketNumber" Name="TicketNumber" />
+                </RadzenColumn>
+            </RadzenRow> *@
+            <RadzenRow style="margin-bottom: 1rem">
+                <RadzenColumn SizeMD="3">
+                    <RadzenLabel Text="Ticket Header" Component="TicketHeader" style="width: 100%" />
+                </RadzenColumn>
+                <RadzenColumn SizeMD="9">
+                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblTicket.TicketHeader" Name="TicketHeader" />
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow style="margin-bottom: 1rem">
+                <RadzenColumn SizeMD="3">
+                    <RadzenLabel Text="Ticket Description" Component="TicketDescription" style="width: 100%" />
+                </RadzenColumn>
+                <RadzenColumn SizeMD="9">
+                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblTicket.TicketDescription" Name="TicketDescription" />
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow style="margin-bottom: 1rem">
+                <RadzenColumn SizeMD="3">
+                    <RadzenLabel Text="Attachment" Component="Attachment" style="width: 100%" />
+                </RadzenColumn>
+            <RadzenColumn SizeMD="9">
+                <RadzenFileInput Disabled="@(tblTicket.EngineerId !=null)" style="display: block; width: 100%"
+                                 @bind-Value="@tblTicket.Attachment" @bind-FileName="@(tblTicket.AttchedFileName)" Name="Attachment" />
+            </RadzenColumn>
+            @* <RadzenImage Path="@(tblTicket.Attachment)" style="border-radius: 16px; height: 32px; width: 32px">
+            </RadzenImage> *@
+            </RadzenRow>
+            <RadzenRow style="margin-bottom: 1rem">
+                <RadzenColumn SizeMD="3">
+                    <RadzenLabel Text="Ticket Status" Component="TicketStatus" style="width: 100%" />
+                </RadzenColumn>
+                <RadzenColumn SizeMD="9">
+                    <RadzenTextBox style="display: block; width: 100%" Disabled="true" @bind-Value="@tblTicket.TicketStatus" Name="TicketStatus" />
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow style="margin-bottom: 1rem">
+                <RadzenColumn SizeMD="3">
+                    <RadzenLabel Text="Date" Component="Date" style="width: 100%" />
+                </RadzenColumn>
+                <RadzenColumn SizeMD="9">
+                    <RadzenDatePicker DateFormat="MM/dd/yyyy" style="display: block; width: 100%" @bind-Value="@tblTicket.Date" Name="Date" />
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow style="margin-bottom: 1rem">
+                <RadzenColumn SizeMD="3">
+                    <RadzenLabel Text="Category" Component="TblCategory" style="width: 100%" />
+                </RadzenColumn>
+                <RadzenColumn SizeMD="9">
+                    <RadzenDropDownDataGrid Data="@tblCategoriesForCategoryId" TextProperty="Description" ValueProperty="CategoryId" AllowClear=true
+                         Placeholder="Choose Category" style="display: block; width: 100%" @bind-Value="@tblTicket.CategoryId" Name="CategoryId"
+                           />
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow style="margin-bottom: 1rem">
+                <RadzenColumn SizeMD="3">
+                    <RadzenLabel Text="Engineer" Component="TblEngineer" style="width: 100%" />
+                </RadzenColumn>
+                <RadzenColumn SizeMD="9">
+                    <RadzenDropDownDataGrid Data="@tblEngineersForEngineerId" TextProperty="Name" ValueProperty="Id" AllowClear=true
+                         Placeholder="Choose TblEngineer" style="display: block; width: 100%" @bind-Value="@tblTicket.EngineerId" Name="EngineerId"
+                           />
+                </RadzenColumn>
+            </RadzenRow>
+            @* <RadzenRow style="margin-bottom: 1rem">
+                <RadzenColumn SizeMD="3">
+                    <RadzenLabel Text="Tbl Employee" Component="TblEmployee" style="width: 100%" />
+                </RadzenColumn>
+                <RadzenColumn SizeMD="9">
+                    <RadzenDropDownDataGrid Data="@tblEmployeesForEmployeeId" TextProperty="Email" ValueProperty="Id" AllowClear=true
+                         Placeholder="Choose TblEmployee" style="display: block; width: 100%" @bind-Value="@tblTicket.EmployeeId" Name="EmployeeId"
+                           />
+                </RadzenColumn>
+            </RadzenRow> *@
+            <RadzenRow style="margin-bottom: 1rem">
+                <RadzenColumn SizeMD="3">
+                    <RadzenLabel Text="User Email" Component="UserEmail" style="width: 100%" />
+                </RadzenColumn>
+                <RadzenColumn SizeMD="9">
+                <RadzenTextBox Disabled="true" style="display: block; width: 100%" @bind-Value="@tblTicket.UserEmail" Name="UserEmail" />
+                </RadzenColumn>
+            </RadzenRow>
+
+       @*  <RadzenFormField Text="Upload Files Into Your Ticket" Variant="Variant.Filled">
+            <ChildContent>
+                <RadzenUpload Multiple="true" Url="upload/single" Progress="@((args) => OnProgress(args, "Multiple files upload"))" />
+            </ChildContent>
+        </RadzenFormField>
+
+
+        <RadzenCard style="overflow:auto;hieght:500px;">
+            <RadzenProgressBar Value="@progress" unit="@info" visible="@(progress>0)" style="margin-bottom:20px;"></RadzenProgressBar>
+        </RadzenCard> *@
+
+          <RadzenStack  Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary" Disabled="@(tblTicket.EngineerId !=null)" ButtonType="ButtonType.Submit" Icon="save" Text="Save" Variant="Variant.Flat" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Variant="Variant.Flat" Click="@CancelButtonClick"  />
+          </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenColumn>
+
