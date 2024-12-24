@@ -172,5 +172,74 @@ namespace RhinoTicketingSystem.Controllers
         {
             return ToExcel(ApplyQuery(await service.GetTblTaskDetails(), Request.Query, false), fileName);
         }
+        [HttpGet("/export/db_a79800_ticket/tbldocumentattachments/csv")]
+        [HttpGet("/export/db_a79800_ticket/tbldocumentattachments/csv(fileName='{fileName}')")]
+        public async Task<FileStreamResult> ExportTblDocumentAttachmentsToCSV(string fileName = null)
+        {
+            return ToCSV(ApplyQuery(await service.GetTblDocumentAttachments(), Request.Query, false), fileName);
+        }
+
+        [HttpGet("/export/db_a79800_ticket/tbldocumentattachments/excel")]
+        [HttpGet("/export/db_a79800_ticket/tbldocumentattachments/excel(fileName='{fileName}')")]
+        public async Task<FileStreamResult> ExportTblDocumentAttachmentsToExcel(string fileName = null)
+        {
+            return ToExcel(ApplyQuery(await service.GetTblDocumentAttachments(), Request.Query, false), fileName);
+        }
+
+        [HttpGet("/export/db_a79800_ticket/tbldocumentheders/csv")]
+        [HttpGet("/export/db_a79800_ticket/tbldocumentheders/csv(fileName='{fileName}')")]
+        public async Task<FileStreamResult> ExportTblDocumentHedersToCSV(string fileName = null)
+        {
+            return ToCSV(ApplyQuery(await service.GetTblDocumentHeders(), Request.Query, false), fileName);
+        }
+
+        [HttpGet("/export/db_a79800_ticket/tbldocumentheders/excel")]
+        [HttpGet("/export/db_a79800_ticket/tbldocumentheders/excel(fileName='{fileName}')")]
+        public async Task<FileStreamResult> ExportTblDocumentHedersToExcel(string fileName = null)
+        {
+            return ToExcel(ApplyQuery(await service.GetTblDocumentHeders(), Request.Query, false), fileName);
+        }
+
+        [HttpGet("/export/db_a79800_ticket/tblprojects/csv")]
+        [HttpGet("/export/db_a79800_ticket/tblprojects/csv(fileName='{fileName}')")]
+        public async Task<FileStreamResult> ExportTblProjectsToCSV(string fileName = null)
+        {
+            return ToCSV(ApplyQuery(await service.GetTblProjects(), Request.Query, false), fileName);
+        }
+
+        [HttpGet("/export/db_a79800_ticket/tblprojects/excel")]
+        [HttpGet("/export/db_a79800_ticket/tblprojects/excel(fileName='{fileName}')")]
+        public async Task<FileStreamResult> ExportTblProjectsToExcel(string fileName = null)
+        {
+            return ToExcel(ApplyQuery(await service.GetTblProjects(), Request.Query, false), fileName);
+        }
+
+        [HttpGet("/export/db_a79800_ticket/tbldocumentserializes/csv")]
+        [HttpGet("/export/db_a79800_ticket/tbldocumentserializes/csv(fileName='{fileName}')")]
+        public async Task<FileStreamResult> ExportTblDocumentSerializesToCSV(string fileName = null)
+        {
+            return ToCSV(ApplyQuery(await service.GetTblDocumentSerializes(), Request.Query, false), fileName);
+        }
+
+        [HttpGet("/export/db_a79800_ticket/tbldocumentserializes/excel")]
+        [HttpGet("/export/db_a79800_ticket/tbldocumentserializes/excel(fileName='{fileName}')")]
+        public async Task<FileStreamResult> ExportTblDocumentSerializesToExcel(string fileName = null)
+        {
+            return ToExcel(ApplyQuery(await service.GetTblDocumentSerializes(), Request.Query, false), fileName);
+        }
+
+        [HttpGet("/export/db_a79800_ticket/tbldepartments/csv")]
+        [HttpGet("/export/db_a79800_ticket/tbldepartments/csv(fileName='{fileName}')")]
+        public async Task<FileStreamResult> ExportTblDepartmentsToCSV(string fileName = null)
+        {
+            return ToCSV(ApplyQuery(await service.GetTblDepartments(), Request.Query, false), fileName);
+        }
+
+        [HttpGet("/export/db_a79800_ticket/tbldepartments/excel")]
+        [HttpGet("/export/db_a79800_ticket/tbldepartments/excel(fileName='{fileName}')")]
+        public async Task<FileStreamResult> ExportTblDepartmentsToExcel(string fileName = null)
+        {
+            return ToExcel(ApplyQuery(await service.GetTblDepartments(), Request.Query, false), fileName);
+        }
     }
 }

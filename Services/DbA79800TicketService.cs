@@ -17,6 +17,10 @@ using System.Collections;
 using static RhinoTicketingSystem.Components.Pages.TestForFileUploadAndList;
 using DocumentFormat.OpenXml.InkML;
 using RhinoTicketingSystem.Models.DbA79800Ticket;
+using Microsoft.Graph.Models.Security;
+using RhinoTicketingSystem.Models.db_a79800_ticket;
+using Task = System.Threading.Tasks.Task;
+using RhinoTicketingSystem.Models;
 
 namespace RhinoTicketingSystem
 {
@@ -33,7 +37,8 @@ namespace RhinoTicketingSystem
         private readonly db_a79800_ticketContext context;
         private readonly NavigationManager navigationManager;
         private UploadController upload { get; set; }
-
+        [Inject]
+        protected SecurityService Security { get; set; }
         public db_a79800_ticketService(db_a79800_ticketContext context, NavigationManager navigationManager)
         {
             this.context = context;
@@ -189,6 +194,10 @@ namespace RhinoTicketingSystem
 
             return await Task.FromResult(itemToReturn);
         }
+        
+
+
+
 
         partial void OnTaskCreated(RhinoTicketingSystem.Models.db_a79800_ticket.Task item);
         partial void OnAfterTaskCreated(RhinoTicketingSystem.Models.db_a79800_ticket.Task item);
@@ -221,6 +230,18 @@ namespace RhinoTicketingSystem
 
             return task;
         }
+
+
+        private async Task<string> GetDocumentTypeForTask()
+        {
+            var documentSerialize = await Context.TblDocumentSerializes
+                .Where(d => d.DocumentType == "Tasks")
+                .FirstOrDefaultAsync();
+
+            return documentSerialize?.Combination ?? "TASK-";
+        }
+
+
 
         public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.Task> CancelTaskChanges(RhinoTicketingSystem.Models.db_a79800_ticket.Task item)
         {
@@ -619,6 +640,848 @@ namespace RhinoTicketingSystem
 
             return itemToDelete;
         }
+
+
+        #region This is For Document Part
+
+        public async Task ExportTblDocumentAttachmentsToExcel(Query query = null, string fileName = null)
+        {
+            navigationManager.NavigateTo(query != null ? query.ToUrl($"export/db_a79800_ticket/tbldocumentattachments/excel(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')") : $"export/db_a79800_ticket/tbldocumentattachments/excel(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')", true);
+        }
+
+        public async Task ExportTblDocumentAttachmentsToCSV(Query query = null, string fileName = null)
+        {
+            navigationManager.NavigateTo(query != null ? query.ToUrl($"export/db_a79800_ticket/tbldocumentattachments/csv(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')") : $"export/db_a79800_ticket/tbldocumentattachments/csv(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')", true);
+        }
+
+        partial void OnTblDocumentAttachmentsRead(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment> items);
+
+        public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment>> GetTblDocumentAttachments(Query query = null)
+        {
+            var items = Context.TblDocumentAttachments.AsQueryable();
+
+            items = items.Include(i => i.TblDocumentHeder);
+
+            if (query != null)
+            {
+                if (!string.IsNullOrEmpty(query.Expand))
+                {
+                    var propertiesToExpand = query.Expand.Split(',');
+                    foreach (var p in propertiesToExpand)
+                    {
+                        items = items.Include(p.Trim());
+                    }
+                }
+
+                ApplyQuery(ref items, query);
+            }
+
+            OnTblDocumentAttachmentsRead(ref items);
+
+            return await Task.FromResult(items);
+        }
+
+        partial void OnTblDocumentAttachmentGet(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment item);
+        partial void OnGetTblDocumentAttachmentById(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment> items);
+
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment> GetTblDocumentAttachmentById(int id)
+        {
+            var items = Context.TblDocumentAttachments
+                              .AsNoTracking()
+                              .Where(i => i.Id == id);
+
+            items = items.Include(i => i.TblDocumentHeder);
+
+            OnGetTblDocumentAttachmentById(ref items);
+
+            var itemToReturn = items.FirstOrDefault();
+
+            OnTblDocumentAttachmentGet(itemToReturn);
+
+            return await Task.FromResult(itemToReturn);
+        }
+
+        partial void OnTblDocumentAttachmentCreated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment item);
+        partial void OnAfterTblDocumentAttachmentCreated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment> CreateTblDocumentAttachment(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment tbldocumentattachment)
+        {
+            OnTblDocumentAttachmentCreated(tbldocumentattachment);
+
+            var existingItem = Context.TblDocumentAttachments
+                              .Where(i => i.Id == tbldocumentattachment.Id)
+                              .FirstOrDefault();
+
+            if (existingItem != null)
+            {
+                throw new Exception("Item already available");
+            }
+
+            try
+            {
+                Context.TblDocumentAttachments.Add(tbldocumentattachment);
+                Context.SaveChanges();
+            }
+            catch
+            {
+                Context.Entry(tbldocumentattachment).State = EntityState.Detached;
+                throw;
+            }
+
+            OnAfterTblDocumentAttachmentCreated(tbldocumentattachment);
+
+            return tbldocumentattachment;
+        }
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment> CancelTblDocumentAttachmentChanges(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment item)
+        {
+            var entityToCancel = Context.Entry(item);
+            if (entityToCancel.State == EntityState.Modified)
+            {
+                entityToCancel.CurrentValues.SetValues(entityToCancel.OriginalValues);
+                entityToCancel.State = EntityState.Unchanged;
+            }
+
+            return item;
+        }
+
+        partial void OnTblDocumentAttachmentUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment item);
+        partial void OnAfterTblDocumentAttachmentUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment> UpdateTblDocumentAttachment(int id, RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment tbldocumentattachment)
+        {
+            OnTblDocumentAttachmentUpdated(tbldocumentattachment);
+
+            var itemToUpdate = Context.TblDocumentAttachments
+                              .Where(i => i.Id == tbldocumentattachment.Id)
+                              .FirstOrDefault();
+
+            if (itemToUpdate == null)
+            {
+                throw new Exception("Item no longer available");
+            }
+
+            var entryToUpdate = Context.Entry(itemToUpdate);
+            entryToUpdate.CurrentValues.SetValues(tbldocumentattachment);
+            entryToUpdate.State = EntityState.Modified;
+
+            Context.SaveChanges();
+
+            OnAfterTblDocumentAttachmentUpdated(tbldocumentattachment);
+
+            return tbldocumentattachment;
+        }
+
+        partial void OnTblDocumentAttachmentDeleted(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment item);
+        partial void OnAfterTblDocumentAttachmentDeleted(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment> DeleteTblDocumentAttachment(int id)
+        {
+            var itemToDelete = Context.TblDocumentAttachments
+                              .Where(i => i.Id == id)
+                              .FirstOrDefault();
+
+            if (itemToDelete == null)
+            {
+                throw new Exception("Item no longer available");
+            }
+
+            OnTblDocumentAttachmentDeleted(itemToDelete);
+
+
+            Context.TblDocumentAttachments.Remove(itemToDelete);
+
+            try
+            {
+                Context.SaveChanges();
+            }
+            catch
+            {
+                Context.Entry(itemToDelete).State = EntityState.Unchanged;
+                throw;
+            }
+
+            OnAfterTblDocumentAttachmentDeleted(itemToDelete);
+
+            return itemToDelete;
+        }
+
+        public async Task ExportTblDocumentHedersToExcel(Query query = null, string fileName = null)
+        {
+            navigationManager.NavigateTo(query != null ? query.ToUrl($"export/db_a79800_ticket/tbldocumentheders/excel(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')") : $"export/db_a79800_ticket/tbldocumentheders/excel(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')", true);
+        }
+
+        public async Task ExportTblDocumentHedersToCSV(Query query = null, string fileName = null)
+        {
+            navigationManager.NavigateTo(query != null ? query.ToUrl($"export/db_a79800_ticket/tbldocumentheders/csv(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')") : $"export/db_a79800_ticket/tbldocumentheders/csv(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')", true);
+        }
+
+        partial void OnTblDocumentHedersRead(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder> items);
+
+        public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder>> GetTblDocumentHeders(Query query = null)
+        {
+            var items = Context.TblDocumentHeders.AsQueryable();
+
+            items = items.Include(i => i.TblProject);
+
+            if (query != null)
+            {
+                if (!string.IsNullOrEmpty(query.Expand))
+                {
+                    var propertiesToExpand = query.Expand.Split(',');
+                    foreach (var p in propertiesToExpand)
+                    {
+                        items = items.Include(p.Trim());
+                    }
+                }
+
+                ApplyQuery(ref items, query);
+            }
+
+            OnTblDocumentHedersRead(ref items);
+
+            return await Task.FromResult(items);
+        }
+
+        partial void OnTblDocumentHederGet(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder item);
+        partial void OnGetTblDocumentHederById(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder> items);
+
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder> GetTblDocumentHederById(int id)
+        {
+            var items = Context.TblDocumentHeders
+                              .AsNoTracking()
+                              .Where(i => i.Id == id);
+
+            items = items.Include(i => i.TblProject);
+
+            OnGetTblDocumentHederById(ref items);
+
+            var itemToReturn = items.FirstOrDefault();
+
+            OnTblDocumentHederGet(itemToReturn);
+
+            return await Task.FromResult(itemToReturn);
+        }
+
+        partial void OnTblDocumentHederCreated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder item);
+        partial void OnAfterTblDocumentHederCreated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder> CreateTblDocumentHeder(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder tbldocumentheder)
+        {
+            OnTblDocumentHederCreated(tbldocumentheder);
+
+            var existingItem = Context.TblDocumentHeders
+                              .Where(i => i.Id == tbldocumentheder.Id)
+                              .FirstOrDefault();
+
+            if (existingItem != null)
+            {
+                throw new Exception("Item already available");
+            }
+
+            try
+            {
+                Context.TblDocumentHeders.Add(tbldocumentheder);
+                Context.SaveChanges();
+            }
+            catch
+            {
+                Context.Entry(tbldocumentheder).State = EntityState.Detached;
+                throw;
+            }
+
+            OnAfterTblDocumentHederCreated(tbldocumentheder);
+
+            return tbldocumentheder;
+        }
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder> CancelTblDocumentHederChanges(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder item)
+        {
+            var entityToCancel = Context.Entry(item);
+            if (entityToCancel.State == EntityState.Modified)
+            {
+                entityToCancel.CurrentValues.SetValues(entityToCancel.OriginalValues);
+                entityToCancel.State = EntityState.Unchanged;
+            }
+
+            return item;
+        }
+
+        partial void OnTblDocumentHederUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder item);
+        partial void OnAfterTblDocumentHederUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder> UpdateTblDocumentHeder(int id, RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder tbldocumentheder)
+        {
+            OnTblDocumentHederUpdated(tbldocumentheder);
+
+            var itemToUpdate = Context.TblDocumentHeders
+                              .Where(i => i.Id == tbldocumentheder.Id)
+                              .FirstOrDefault();
+
+            if (itemToUpdate == null)
+            {
+                throw new Exception("Item no longer available");
+            }
+
+            var entryToUpdate = Context.Entry(itemToUpdate);
+            entryToUpdate.CurrentValues.SetValues(tbldocumentheder);
+            entryToUpdate.State = EntityState.Modified;
+
+            Context.SaveChanges();
+
+            OnAfterTblDocumentHederUpdated(tbldocumentheder);
+
+            return tbldocumentheder;
+        }
+
+        partial void OnTblDocumentHederDeleted(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder item);
+        partial void OnAfterTblDocumentHederDeleted(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder> DeleteTblDocumentHeder(int id)
+        {
+            var itemToDelete = Context.TblDocumentHeders
+                              .Where(i => i.Id == id)
+                              .Include(i => i.TblDocumentAttachments)
+                              .FirstOrDefault();
+
+            if (itemToDelete == null)
+            {
+                throw new Exception("Item no longer available");
+            }
+
+            OnTblDocumentHederDeleted(itemToDelete);
+
+
+            Context.TblDocumentHeders.Remove(itemToDelete);
+
+            try
+            {
+                Context.SaveChanges();
+            }
+            catch
+            {
+                Context.Entry(itemToDelete).State = EntityState.Unchanged;
+                throw;
+            }
+
+            OnAfterTblDocumentHederDeleted(itemToDelete);
+
+            return itemToDelete;
+        }
+
+        public async Task ExportTblProjectsToExcel(Query query = null, string fileName = null)
+        {
+            navigationManager.NavigateTo(query != null ? query.ToUrl($"export/db_a79800_ticket/tblprojects/excel(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')") : $"export/db_a79800_ticket/tblprojects/excel(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')", true);
+        }
+
+        public async Task ExportTblProjectsToCSV(Query query = null, string fileName = null)
+        {
+            navigationManager.NavigateTo(query != null ? query.ToUrl($"export/db_a79800_ticket/tblprojects/csv(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')") : $"export/db_a79800_ticket/tblprojects/csv(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')", true);
+        }
+
+        partial void OnTblProjectsRead(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblProject> items);
+
+        public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblProject>> GetTblProjects(Query query = null)
+        {
+            var items = Context.TblProjects.AsQueryable();
+
+
+            if (query != null)
+            {
+                if (!string.IsNullOrEmpty(query.Expand))
+                {
+                    var propertiesToExpand = query.Expand.Split(',');
+                    foreach (var p in propertiesToExpand)
+                    {
+                        items = items.Include(p.Trim());
+                    }
+                }
+
+                ApplyQuery(ref items, query);
+            }
+
+            OnTblProjectsRead(ref items);
+
+            return await Task.FromResult(items);
+        }
+
+        partial void OnTblProjectGet(RhinoTicketingSystem.Models.db_a79800_ticket.TblProject item);
+        partial void OnGetTblProjectById(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblProject> items);
+
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblProject> GetTblProjectById(int id)
+        {
+            var items = Context.TblProjects
+                              .AsNoTracking()
+                              .Where(i => i.Id == id);
+
+
+            OnGetTblProjectById(ref items);
+
+            var itemToReturn = items.FirstOrDefault();
+
+            OnTblProjectGet(itemToReturn);
+
+            return await Task.FromResult(itemToReturn);
+        }
+
+        partial void OnTblProjectCreated(RhinoTicketingSystem.Models.db_a79800_ticket.TblProject item);
+        partial void OnAfterTblProjectCreated(RhinoTicketingSystem.Models.db_a79800_ticket.TblProject item);
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblProject> CreateTblProject(RhinoTicketingSystem.Models.db_a79800_ticket.TblProject tblproject)
+        {
+            OnTblProjectCreated(tblproject);
+
+            var existingItem = Context.TblProjects
+                              .Where(i => i.Id == tblproject.Id)
+                              .FirstOrDefault();
+
+            if (existingItem != null)
+            {
+                throw new Exception("Item already available");
+            }
+
+            try
+            {
+                Context.TblProjects.Add(tblproject);
+                Context.SaveChanges();
+            }
+            catch
+            {
+                Context.Entry(tblproject).State = EntityState.Detached;
+                throw;
+            }
+
+            OnAfterTblProjectCreated(tblproject);
+
+            return tblproject;
+        }
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblProject> CancelTblProjectChanges(RhinoTicketingSystem.Models.db_a79800_ticket.TblProject item)
+        {
+            var entityToCancel = Context.Entry(item);
+            if (entityToCancel.State == EntityState.Modified)
+            {
+                entityToCancel.CurrentValues.SetValues(entityToCancel.OriginalValues);
+                entityToCancel.State = EntityState.Unchanged;
+            }
+
+            return item;
+        }
+
+        partial void OnTblProjectUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblProject item);
+        partial void OnAfterTblProjectUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblProject item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblProject> UpdateTblProject(int id, RhinoTicketingSystem.Models.db_a79800_ticket.TblProject tblproject)
+        {
+            try
+            {
+                OnTblProjectUpdated(tblproject);
+
+                var itemToUpdate = await Context.TblProjects
+                    .FirstOrDefaultAsync(i => i.Id == id);
+
+                if (itemToUpdate == null)
+                {
+                    throw new Exception("Item no longer available");
+                }
+
+                // Update properties
+                itemToUpdate.Name = tblproject.Name;
+                itemToUpdate.CreatedIn = tblproject.CreatedIn;
+                itemToUpdate.CreatedBy = tblproject.CreatedBy;
+                itemToUpdate.ProjectBranch = tblproject.ProjectBranch;
+                itemToUpdate.DocumentSerialId = tblproject.DocumentSerialId;
+                itemToUpdate.DocumentSerial = tblproject.DocumentSerial;
+
+                await Context.SaveChangesAsync();
+
+                OnAfterTblProjectUpdated(itemToUpdate);
+                return itemToUpdate;
+            }
+            catch
+            {
+                Context.Entry(tblproject).State = EntityState.Detached;
+                throw;
+            }
+
+        }
+
+
+
+
+
+        partial void OnTblProjectDeleted(RhinoTicketingSystem.Models.db_a79800_ticket.TblProject item);
+        partial void OnAfterTblProjectDeleted(RhinoTicketingSystem.Models.db_a79800_ticket.TblProject item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblProject> DeleteTblProject(int id)
+        {
+            var itemToDelete = Context.TblProjects
+                              .Where(i => i.Id == id)
+                              .Include(i => i.TblDocumentHeders)
+                              .FirstOrDefault();
+
+            if (itemToDelete == null)
+            {
+                throw new Exception("Item no longer available");
+            }
+
+            OnTblProjectDeleted(itemToDelete);
+
+
+            Context.TblProjects.Remove(itemToDelete);
+
+            try
+            {
+                Context.SaveChanges();
+            }
+            catch
+            {
+                Context.Entry(itemToDelete).State = EntityState.Unchanged;
+                throw;
+            }
+
+            OnAfterTblProjectDeleted(itemToDelete);
+
+            return itemToDelete;
+        }
+
+        #endregion
+
+
+
+        #region This Is For Document Serialize Part And Department also
+
+        public async Task ExportTblDocumentSerializesToExcel(Query query = null, string fileName = null)
+        {
+            navigationManager.NavigateTo(query != null ? query.ToUrl($"export/db_a79800_ticket/tbldocumentserializes/excel(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')") : $"export/db_a79800_ticket/tbldocumentserializes/excel(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')", true);
+        }
+
+        public async Task ExportTblDocumentSerializesToCSV(Query query = null, string fileName = null)
+        {
+            navigationManager.NavigateTo(query != null ? query.ToUrl($"export/db_a79800_ticket/tbldocumentserializes/csv(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')") : $"export/db_a79800_ticket/tbldocumentserializes/csv(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')", true);
+        }
+
+        partial void OnTblDocumentSerializesRead(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize> items);
+
+        public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize>> GetTblDocumentSerializes(Query query = null)
+        {
+            var items = Context.TblDocumentSerializes.AsQueryable();
+
+            items = items.Include(i => i.TblDepartment);
+
+            if (query != null)
+            {
+                if (!string.IsNullOrEmpty(query.Expand))
+                {
+                    var propertiesToExpand = query.Expand.Split(',');
+                    foreach (var p in propertiesToExpand)
+                    {
+                        items = items.Include(p.Trim());
+                    }
+                }
+
+                ApplyQuery(ref items, query);
+            }
+
+            OnTblDocumentSerializesRead(ref items);
+
+            return await Task.FromResult(items);
+        }
+
+        partial void OnTblDocumentSerializeGet(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize item);
+        partial void OnGetTblDocumentSerializeById(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize> items);
+
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize> GetTblDocumentSerializeById(int id)
+        {
+            var items = Context.TblDocumentSerializes
+                              .AsNoTracking()
+                              .Where(i => i.Id == id);
+
+            items = items.Include(i => i.TblDepartment);
+
+            OnGetTblDocumentSerializeById(ref items);
+
+            var itemToReturn = items.FirstOrDefault();
+
+            OnTblDocumentSerializeGet(itemToReturn);
+
+            return await Task.FromResult(itemToReturn);
+        }
+
+
+        partial void OnTblDocumentSerializeCreated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize item);
+        partial void OnAfterTblDocumentSerializeCreated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize> CreateTblDocumentSerialize(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize tbldocumentserialize)
+        {
+            try
+            {
+                OnTblDocumentSerializeCreated(tbldocumentserialize);
+
+                // Generate the sequence number
+                tbldocumentserialize.Combination = await GenerateDocumentSequence(
+                    tbldocumentserialize.FirstSerial,
+                    tbldocumentserialize.SecondSerial,
+                    tbldocumentserialize.ThirdSerial,
+                    tbldocumentserialize.FourthSerial
+                );
+
+                tbldocumentserialize.CreatedIn = DateTime.Now;
+                ////Set creator name from Security service
+                //tbldocumentserialize.CreatedBy = Security.User.Name;
+
+                Context.TblDocumentSerializes.Add(tbldocumentserialize);
+                Context.SaveChanges();
+
+                OnAfterTblDocumentSerializeCreated(tbldocumentserialize);
+                return tbldocumentserialize;
+            }
+            catch
+            {
+                Context.Entry(tbldocumentserialize).State = EntityState.Detached;
+                throw;
+            }
+        }
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize> CancelTblDocumentSerializeChanges(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize item)
+        {
+            var entityToCancel = Context.Entry(item);
+            if (entityToCancel.State == EntityState.Modified)
+            {
+                entityToCancel.CurrentValues.SetValues(entityToCancel.OriginalValues);
+                entityToCancel.State = EntityState.Unchanged;
+            }
+
+            return item;
+        }
+
+        partial void OnTblDocumentSerializeUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize item);
+        partial void OnAfterTblDocumentSerializeUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize> UpdateTblDocumentSerialize(int id, RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize tbldocumentserialize)
+        {
+            OnTblDocumentSerializeUpdated(tbldocumentserialize);
+
+            var itemToUpdate = Context.TblDocumentSerializes
+                              .Where(i => i.Id == tbldocumentserialize.Id)
+                              .FirstOrDefault();
+
+            if (itemToUpdate == null)
+            {
+                throw new Exception("Item no longer available");
+            }
+
+            var entryToUpdate = Context.Entry(itemToUpdate);
+            entryToUpdate.CurrentValues.SetValues(tbldocumentserialize);
+            entryToUpdate.State = EntityState.Modified;
+
+            Context.SaveChanges();
+
+            OnAfterTblDocumentSerializeUpdated(tbldocumentserialize);
+
+            return tbldocumentserialize;
+        }
+
+        partial void OnTblDocumentSerializeDeleted(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize item);
+        partial void OnAfterTblDocumentSerializeDeleted(RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize> DeleteTblDocumentSerialize(int id)
+        {
+            var itemToDelete = Context.TblDocumentSerializes
+                              .Where(i => i.Id == id)
+                              .FirstOrDefault();
+
+            if (itemToDelete == null)
+            {
+                throw new Exception("Item no longer available");
+            }
+
+            OnTblDocumentSerializeDeleted(itemToDelete);
+
+
+            Context.TblDocumentSerializes.Remove(itemToDelete);
+
+            try
+            {
+                Context.SaveChanges();
+            }
+            catch
+            {
+                Context.Entry(itemToDelete).State = EntityState.Unchanged;
+                throw;
+            }
+
+            OnAfterTblDocumentSerializeDeleted(itemToDelete);
+
+            return itemToDelete;
+        }
+
+        public async Task ExportTblDepartmentsToExcel(Query query = null, string fileName = null)
+        {
+            navigationManager.NavigateTo(query != null ? query.ToUrl($"export/db_a79800_ticket/tbldepartments/excel(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')") : $"export/db_a79800_ticket/tbldepartments/excel(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')", true);
+        }
+
+        public async Task ExportTblDepartmentsToCSV(Query query = null, string fileName = null)
+        {
+            navigationManager.NavigateTo(query != null ? query.ToUrl($"export/db_a79800_ticket/tbldepartments/csv(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')") : $"export/db_a79800_ticket/tbldepartments/csv(fileName='{(!string.IsNullOrEmpty(fileName) ? UrlEncoder.Default.Encode(fileName) : "Export")}')", true);
+        }
+
+        partial void OnTblDepartmentsRead(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment> items);
+
+        public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment>> GetTblDepartments(Query query = null)
+        {
+            var items = Context.TblDepartments.AsQueryable();
+
+
+            if (query != null)
+            {
+                if (!string.IsNullOrEmpty(query.Expand))
+                {
+                    var propertiesToExpand = query.Expand.Split(',');
+                    foreach (var p in propertiesToExpand)
+                    {
+                        items = items.Include(p.Trim());
+                    }
+                }
+
+                ApplyQuery(ref items, query);
+            }
+
+            OnTblDepartmentsRead(ref items);
+
+            return await Task.FromResult(items);
+        }
+
+        partial void OnTblDepartmentGet(RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment item);
+        partial void OnGetTblDepartmentById(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment> items);
+
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment> GetTblDepartmentById(int id)
+        {
+            var items = Context.TblDepartments
+                              .AsNoTracking()
+                              .Where(i => i.Id == id);
+
+
+            OnGetTblDepartmentById(ref items);
+
+            var itemToReturn = items.FirstOrDefault();
+
+            OnTblDepartmentGet(itemToReturn);
+
+            return await Task.FromResult(itemToReturn);
+        }
+
+        partial void OnTblDepartmentCreated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment item);
+        partial void OnAfterTblDepartmentCreated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment> CreateTblDepartment(RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment tbldepartment)
+        {
+            OnTblDepartmentCreated(tbldepartment);
+
+            var existingItem = Context.TblDepartments
+                              .Where(i => i.Id == tbldepartment.Id)
+                              .FirstOrDefault();
+
+            if (existingItem != null)
+            {
+                throw new Exception("Item already available");
+            }
+
+            try
+            {
+                Context.TblDepartments.Add(tbldepartment);
+                Context.SaveChanges();
+            }
+            catch
+            {
+                Context.Entry(tbldepartment).State = EntityState.Detached;
+                throw;
+            }
+
+            OnAfterTblDepartmentCreated(tbldepartment);
+
+            return tbldepartment;
+        }
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment> CancelTblDepartmentChanges(RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment item)
+        {
+            var entityToCancel = Context.Entry(item);
+            if (entityToCancel.State == EntityState.Modified)
+            {
+                entityToCancel.CurrentValues.SetValues(entityToCancel.OriginalValues);
+                entityToCancel.State = EntityState.Unchanged;
+            }
+
+            return item;
+        }
+
+        partial void OnTblDepartmentUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment item);
+        partial void OnAfterTblDepartmentUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment> UpdateTblDepartment(int id, RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment tbldepartment)
+        {
+            OnTblDepartmentUpdated(tbldepartment);
+
+            var itemToUpdate = Context.TblDepartments
+                              .Where(i => i.Id == tbldepartment.Id)
+                              .FirstOrDefault();
+
+            if (itemToUpdate == null)
+            {
+                throw new Exception("Item no longer available");
+            }
+
+            var entryToUpdate = Context.Entry(itemToUpdate);
+            entryToUpdate.CurrentValues.SetValues(tbldepartment);
+            entryToUpdate.State = EntityState.Modified;
+
+            Context.SaveChanges();
+
+            OnAfterTblDepartmentUpdated(tbldepartment);
+
+            return tbldepartment;
+        }
+
+        partial void OnTblDepartmentDeleted(RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment item);
+        partial void OnAfterTblDepartmentDeleted(RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment item);
+
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment> DeleteTblDepartment(int id)
+        {
+            var itemToDelete = Context.TblDepartments
+                              .Where(i => i.Id == id)
+                              .Include(i => i.TblDocumentSerializes)
+                              .FirstOrDefault();
+
+            if (itemToDelete == null)
+            {
+                throw new Exception("Item no longer available");
+            }
+
+            OnTblDepartmentDeleted(itemToDelete);
+
+
+            Context.TblDepartments.Remove(itemToDelete);
+
+            try
+            {
+                Context.SaveChanges();
+            }
+            catch
+            {
+                Context.Entry(itemToDelete).State = EntityState.Unchanged;
+                throw;
+            }
+
+            OnAfterTblDepartmentDeleted(itemToDelete);
+
+            return itemToDelete;
+        }
+
+        #endregion
 
         public async Task ExportTblCategoriesToExcel(Query query = null, string fileName = null)
         {
@@ -1319,13 +2182,13 @@ namespace RhinoTicketingSystem
 
                 OnAfterTblEngineerDeleted(itemToDelete);
             }
-            
+
 
             return itemToDelete;
         }
         void t()
         {
-            
+
         }
         public async Task ExportTblReassignTicketsToExcel(Query query = null, string fileName = null)
         {
@@ -1369,7 +2232,7 @@ namespace RhinoTicketingSystem
 
         public async Task<IList<RhinoTicketingSystem.Models.DbA79800Ticket.TblTicketattachment>> GetTblTicketAttachments(int ticketId)
         {
-            var items = Context.TblTicketattachments.Where(p=>p.TicketId== ticketId).ToList();
+            var items = Context.TblTicketattachments.Where(p => p.TicketId == ticketId).ToList();
 
             return await Task.FromResult(items);
         }
@@ -1572,7 +2435,7 @@ namespace RhinoTicketingSystem
         }
         public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblStatus>> GetTblStatusesForProceeding(Query query = null)
         {
-            var items = Context.TblStatuses.Where(s=>s.StatusId!=1).AsQueryable();
+            var items = Context.TblStatuses.Where(s => s.StatusId != 1).AsQueryable();
 
 
             if (query != null)
@@ -1758,10 +2621,10 @@ namespace RhinoTicketingSystem
             return await Task.FromResult(items);
         }
         //this is for get user related tickets
-        public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket>> GetTblTicketsForUser(string userEmail,Query query = null)
+        public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket>> GetTblTicketsForUser(string userEmail, Query query = null)
         {
             var items = Context.TblTickets
-                .Where(t=>t.UserEmail==userEmail).AsQueryable();
+                .Where(t => t.UserEmail == userEmail).AsQueryable();
 
             items = items.Include(i => i.TblCategory);
             items = items.Include(i => i.TblEmployee);
@@ -1790,7 +2653,7 @@ namespace RhinoTicketingSystem
         public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket>> GetTblTicketsForEngineer(string engEmail, Query query = null)
         {
             var items = Context.TblTickets
-                .Where(t=>t.EngEmail==engEmail).AsQueryable();
+                .Where(t => t.EngEmail == engEmail).AsQueryable();
 
             items = items.Include(i => i.TblCategory);
             items = items.Include(i => i.TblEmployee);
@@ -1818,7 +2681,7 @@ namespace RhinoTicketingSystem
 
         //this is for getting just one record
         //partial void OnTblTicketGet(RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket item);
-        public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket>> GetTblTicketsCountByEngineerForDashboard( Query query = null)
+        public async Task<IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket>> GetTblTicketsCountByEngineerForDashboard(Query query = null)
         {
             var items = Context.TblTickets.AsQueryable().Where(p => p.EngineerId != null);
 
@@ -1826,7 +2689,7 @@ namespace RhinoTicketingSystem
             items = items.Include(i => i.TblEmployee);
             items = items.Include(i => i.TblEngineer);
 
-            
+
 
             if (query != null)
             {
@@ -1848,7 +2711,7 @@ namespace RhinoTicketingSystem
         }
         public async Task<IList<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket>> GetTicketsCountsByEng()
         {
-            var items = context.TblTickets.Where(t => t.EngineerId != null).Include(t=>t.TblEngineer).ToList();
+            var items = context.TblTickets.Where(t => t.EngineerId != null).Include(t => t.TblEngineer).ToList();
             return items;
         }
         public async Task<IList<RhinoTicketingSystem.Models.db_a79800_ticket.TblEngineer>> GetEngineersForTicketsCountsByEng()
@@ -1856,7 +2719,7 @@ namespace RhinoTicketingSystem
             var items = context.TblEngineers.ToList();
             return items;
         }
-        
+
         partial void OnTblTicketGet(RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket item);
         partial void OnGetTblTicketByTicketId(ref IQueryable<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket> items);
 
@@ -1879,8 +2742,8 @@ namespace RhinoTicketingSystem
 
             return await Task.FromResult(itemToReturn);
         }
-        
-        public  void  CreateTicketAttachment(List<FileAttchment> fileAttachments)
+
+        public void CreateTicketAttachment(List<FileAttchment> fileAttachments)
         {
             List<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket> listOfTickets = new List<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket>();
             foreach (var item in fileAttachments)
@@ -1888,15 +2751,15 @@ namespace RhinoTicketingSystem
                 RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket ticket = new Models.db_a79800_ticket.TblTicket();
                 ticket.AttchedFileName = item.Filename;
                 ticket.Attachment = item.FilePath;
-                ticket.TicketHeader=item.Filename;
+                ticket.TicketHeader = item.Filename;
                 ticket.Date = DateTime.Now;
-               
+
                 listOfTickets.Add(ticket);
             }
-            
+
             context.TblTickets.AddRange(listOfTickets);
             context.SaveChanges();
-             
+
         }
         public void CreateAttachmentForTicketByTicketId(List<FileAttchment> fileAttachments)
         {
@@ -1907,7 +2770,7 @@ namespace RhinoTicketingSystem
                 newAttachment.AttachedFileName = item.Filename;
                 newAttachment.AttachedFilePath = item.FilePath;
                 newAttachment.attachedFileSize = item.FileSize;
-                newAttachment.FileType=item.FileType;
+                newAttachment.FileType = item.FileType;
                 newAttachment.CreatedDate = DateTime.Now;
                 newAttachment.TicketId = item.TicketId;
                 listOfAttachments.Add(newAttachment);
@@ -2045,7 +2908,7 @@ namespace RhinoTicketingSystem
         partial void OnTblTicketUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket item);
         partial void OnAfterTblTicketUpdated(RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket item);
 
-        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket> UpdateTblTicket(int ticketid, 
+        public async Task<RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket> UpdateTblTicket(int ticketid,
             RhinoTicketingSystem.Models.db_a79800_ticket.TblTicket tblticket)
         {
             OnTblTicketUpdated(tblticket);
@@ -2114,7 +2977,7 @@ namespace RhinoTicketingSystem
 
             //and finally update ticket ststus to reAssigned
             itemToUpdate.TicketStatus = ticketStatus.Description;
-            
+
             itemToUpdate.EngEmail = engineerDetails.EngEmail;
             context.SaveChanges();
 
@@ -2134,7 +2997,7 @@ namespace RhinoTicketingSystem
                               .FirstOrDefault();
             var ticketStatus = context.TblStatuses
                 .FirstOrDefault(p => p.StatusId == 2);
-            
+
             if (itemToUpdate == null)
             {
                 throw new Exception("Item no longer available");
@@ -2169,7 +3032,7 @@ namespace RhinoTicketingSystem
                 //and finally update ticket ststus to reAssigned
                 itemToUpdate.TicketStatus = ticketStatus.Description;
                 itemToUpdate.StatusId = ticketStatus.StatusId;
-                itemToUpdate.EngEmail=engineerDetails.EngEmail;
+                itemToUpdate.EngEmail = engineerDetails.EngEmail;
                 context.SaveChanges();
                 OnAfterTblTicketUpdated(tblticket);
             }
@@ -2400,5 +3263,56 @@ namespace RhinoTicketingSystem
 
             return itemToDelete;
         }
+
+
+        public async Task<string> GenerateDocumentSequence(string firstSerial, string secondSerial, string thirdSerial, string fourthSerial)
+        {
+            try
+            {
+                string baseCombination = $"{firstSerial}-{secondSerial}-{thirdSerial}-{fourthSerial}";
+
+                var lastDocument = await Context.TblDocumentSerializes
+                    .Where(d => d.Combination.StartsWith(baseCombination))
+                    .OrderByDescending(d => d.Id)
+                    .FirstOrDefaultAsync();
+
+                if (lastDocument == null)
+                {
+                    return $"{baseCombination}001";
+                }
+
+                string numberPart = lastDocument.Combination.Substring(baseCombination.Length);
+                if (int.TryParse(numberPart, out int lastNumber))
+                {
+                    return $"{baseCombination}{(lastNumber + 1):D3}";
+                }
+
+                return $"{baseCombination}001";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        
+        public async Task<SigningSession> CreateSigningSession(SigningSession session)
+        {
+            Context.SigningSessions.Add(session);
+            await Context.SaveChangesAsync();
+            return session;
+        }
+        public async Task<SigningSession> GetSigningSessionByToken(string token)
+        {
+            return await Context.SigningSessions
+                .FirstOrDefaultAsync(s => s.Token == token && !s.IsUsed && s.ExpiresAt > DateTime.UtcNow);
+        }
+        public async Task<SigningSession> UpdateSigningSession(SigningSession signingSession)
+        {
+            Context.SigningSessions.Update(signingSession);
+            await Context.SaveChangesAsync();
+            return signingSession;
+        }
+
+
     }
 }

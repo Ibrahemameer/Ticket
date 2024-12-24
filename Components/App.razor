@@ -4,60 +4,88 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="@NavigationManager.BaseUri" />
-    <RadzenTheme @rendermode="@InteractiveServer" Theme="material" />
-    <link rel="stylesheet" href="css/site.css" />
-    <link rel="icon" href="favicon.ico" />
-
-    <!-- Add your custom script here -->
-    <script>
-        window.setDirection = function (direction) {
-            document.body.setAttribute("dir", direction);
-            console.log("Direction set to: " + direction); // Debug output
-        }
-    </script>
-
-    <script src="js/download.js"></script>
-    <script src="js/fileOperations.js"></script>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<base href="@NavigationManager.BaseUri" />
+	<RadzenTheme @rendermode="@InteractiveServer" Theme="material" />
+	<link rel="stylesheet" href="css/site.css" />
+	<link rel="icon" href="favicon.ico" />
 
 
-    
+
+	<!-- Add your custom script here -->
+	<script>
+		window.setDirection = function (direction) {
+			document.body.setAttribute("dir", direction);
+			console.log("Direction set to: " + direction); // Debug output
+		}
+	</script>
+
+	<script>
+		window.getSignatureData = function (element) {
+			return element.toDataURL();
+		}
+	</script>
+	<script>
+		window.initializeSignaturePad = function () {
+			var canvas = document.querySelector('#signaturePad canvas');
+			var signaturePad = new SignaturePad(canvas);
+			return signaturePad;
+		};
+
+		window.clearSignaturePad = function () {
+			var canvas = document.querySelector('#signaturePad canvas');
+			var context = canvas.getContext('2d');
+			context.clearRect(0, 0, canvas.width, canvas.height);
+		};
+
+		window.getSignatureData = function () {
+			var canvas = document.querySelector('#signaturePad canvas');
+			return canvas ? canvas.toDataURL() : null;
+		};
+	</script>
+
+	<script src="js/download.js"></script>
+	<script src="js/fileOperations.js"></script>
 
 
-    <HeadOutlet @rendermode="@InteractiveServer" />
+
+
+
+	<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+	<HeadOutlet @rendermode="@InteractiveServer" />
 </head>
 
 <body>
-    <Routes @rendermode="@InteractiveServer" />
-    <script src="_framework/blazor.web.js"></script>
-    <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
+	<Routes @rendermode="@InteractiveServer" />
+	<script src="_framework/blazor.web.js"></script>
+	<script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
+
 </body>
 
 </html>
 
 @code {
-    [CascadingParameter]
-    private HttpContext HttpContext { get; set; }
+	[CascadingParameter]
+	private HttpContext HttpContext { get; set; }
 
-    [Inject]
-    private ThemeService ThemeService { get; set; }
+	[Inject]
+	private ThemeService ThemeService { get; set; }
 
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
 
-        if (HttpContext != null)
-        {
-            var theme = HttpContext.Request.Cookies["RhinoTicketingSystemTheme"];
+		if (HttpContext != null)
+		{
+			var theme = HttpContext.Request.Cookies["RhinoTicketingSystemTheme"];
 
-            if (!string.IsNullOrEmpty(theme))
-            {
-                ThemeService.SetTheme(theme, false);
-            }
-        }
-    }
+			if (!string.IsNullOrEmpty(theme))
+			{
+				ThemeService.SetTheme(theme, false);
+			}
+		}
+	}
 
-    
+
 }

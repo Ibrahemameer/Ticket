@@ -1,0 +1,83 @@
+﻿@page "/upload-document-attachment/{DocumentId:int}"
+@using Microsoft.AspNetCore.Components.Forms
+@using RhinoTicketingSystem.Models.db_a79800_ticket
+@attribute [Authorize]
+
+<RadzenTemplateForm TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment">
+    <RadzenCard Style="margin-bottom: 1rem">
+        <RadzenRow>
+            <RadzenColumn SizeMD="6">
+                <RadzenStack Spacing="1rem">
+                    <RadzenText TextStyle="TextStyle.H6">Document Attachments</RadzenText>
+                    <RadzenRow>
+                        <RadzenColumn SizeMD="12">
+                            <InputFile OnChange="@HandleFileSelected" multiple />
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenStack>
+            </RadzenColumn>
+            <RadzenColumn SizeMD="6">
+                @if (uploadedFilesPath.Count > 0)
+                {
+                    <RadzenCard Style="height: 100%; padding: 1rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Upload Progress</RadzenText>
+                        @foreach (var file in uploadedFilesPath)
+                        {
+                            <RadzenStack Spacing="0.5rem" Style="margin-bottom: 0.5rem">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem">
+                                    <RadzenText TextStyle="TextStyle.Body2">@file.Filename</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2">
+                                        @((file.FileSize / (1024.0 * 1024.0)).ToString("0.000")) MB
+                                    </RadzenText>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem">
+                                    <RadzenProgressBar Style="flex-grow: 1" Value="100" ShowValue="true" />
+                                </div>
+                            </RadzenStack>
+                        }
+                    </RadzenCard>
+                }
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenCard>
+
+    <RadzenText TextStyle="TextStyle.H6" Style="margin: 1rem 0">Document Attachments List</RadzenText>
+    <RadzenDataGrid @ref="grid0"
+                    AllowFiltering="true"
+                    FilterMode="FilterMode.Advanced"
+                    AllowPaging="true"
+                    AllowSorting="true"
+                    PageSizeOptions=@(new int[]{5, 10, 20, 30})
+                    ShowPagingSummary="true"
+                    Data="@documentAttachments"
+                    TItem="TblDocumentAttachment">
+        <Columns>
+            <RadzenDataGridColumn TItem="TblDocumentAttachment" Property="FileName" Title="File Name" />
+            <RadzenDataGridColumn TItem="TblDocumentAttachment" Property="FileSize" Title="Size" />
+            <RadzenDataGridColumn TItem="TblDocumentAttachment" Property="CreatedIn" Title="Date" />
+            <RadzenDataGridColumn TItem="TblDocumentAttachment" Property="FileType" Title="File Type" />
+            <RadzenDataGridColumn TItem="TblDocumentAttachment" Width="200px" TextAlign="TextAlign.Center">
+                <Template Context="attachment">
+                    <RadzenButton ButtonStyle="ButtonStyle.Info"
+                                  Icon="download"
+                                  Size="ButtonSize.ExtraSmall"
+                                  Click="@(() => DownloadFile(attachment))"
+                                  Style="margin-right: 5px" />
+                    @if (attachment.FileType?.ToLower() == ".pdf")
+                    {
+                        <RadzenButton ButtonStyle="ButtonStyle.Secondary"
+                                      Icon="draw"
+                                      Size="ButtonSize.ExtraSmall"
+                                      Click="@(() => GenerateSigningLink(attachment))"
+                                      Style="margin-right: 5px"
+                                      Tooltip="Generate Signing Link" />
+                    }
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger"
+                                  Icon="delete"
+                                  Size="ButtonSize.ExtraSmall"
+                                  Click="@(() => ConfirmDelete(attachment))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</RadzenTemplateForm>

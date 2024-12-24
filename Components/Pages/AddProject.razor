@@ -1,0 +1,54 @@
+@page "/add-project"
+
+@attribute [Authorize]
+
+<PageTitle>Add TblProject</PageTitle>
+    <RadzenColumn SizeMD=12>
+        <RadzenAlert Shade="Shade.Lighter" Variant="Variant.Flat" Size="AlertSize.Small" AlertStyle="AlertStyle.Danger" Visible="@errorVisible">Cannot save TblProject</RadzenAlert>
+        <RadzenTemplateForm TItem="RhinoTicketingSystem.Models.db_a79800_ticket.TblProject" Data="@tblProject" Visible="@(tblProject != null && canEdit)" Submit="@FormSubmit">
+          <RadzenStack>
+            <RadzenFormField Text="Name" Variant="Variant.Filled">
+                  <ChildContent>
+                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblProject.Name" Name="Name" />
+              </ChildContent>
+            </RadzenFormField>
+            <RadzenFormField Text="Created In" Variant="Variant.Filled">
+                  <ChildContent>
+                    <RadzenDatePicker DateFormat="MM/dd/yyyy" style="display: block; width: 100%" @bind-Value="@tblProject.CreatedIn" Name="CreatedIn" />
+              </ChildContent>
+            </RadzenFormField>
+            <RadzenFormField Text="Created By" Variant="Variant.Filled">
+                  <ChildContent>
+                    <RadzenTextBox style="display: block; width: 100%" @bind-Value="@tblProject.CreatedBy" Name="CreatedBy" />
+              </ChildContent>
+            </RadzenFormField>
+            <RadzenFormField Text="Project Branch" Variant="Variant.Filled">
+                <ChildContent>
+                    <RadzenDropDown @bind-Value="@tblProject.ProjectBranch"
+                                    Data="@branchOptions"
+                                    Style="width: 100%"
+                                    Name="ProjectBranch" />
+                </ChildContent>
+            </RadzenFormField>
+
+            <RadzenFormField Text="Document Serial" Variant="Variant.Filled">
+    <ChildContent>
+        <RadzenDropDown 
+            @bind-Value="@tblProject.DocumentSerialId"
+            Data="@documentSerials"
+            TextProperty="Combination"
+            ValueProperty="Id"
+            Change="@OnSerialChange"
+            Style="width: 100%"
+            Name="DocumentSerial" />
+    </ChildContent>
+</RadzenFormField>
+
+        </RadzenStack>
+          <RadzenStack style="margin-top:1rem;" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" Icon="save" Text="Save" Variant="Variant.Flat" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Variant="Variant.Flat" Click="@CancelButtonClick"  />
+          </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenColumn>
+

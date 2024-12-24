@@ -15,6 +15,8 @@ using Azure.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Web;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using RhinoTicketingSystem.Components.Layout;
+using iText.Bouncycastleconnector;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +36,10 @@ builder.Services.AddScoped<AuthenticationService>();
 builder.Services.AddScoped<MegaUploadService>();
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<MenuService>();
+builder.Services.AddScoped<MainLayout>();
+builder.Services.AddScoped<PdfSignatureService>();
+
 
 
 builder.Services.AddScoped<GraphServiceClient>(provider =>

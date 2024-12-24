@@ -1,0 +1,25 @@
+﻿@page "/pdf-sign/{Token}"
+@attribute [Authorize]
+
+<RadzenStack>
+    <RadzenCard>
+        <div class="pdf-container">
+            @if (!string.IsNullOrEmpty(pdfUrl))
+            {
+                <iframe src="@pdfUrl" style="width:100%; height:600px;" />
+            }
+        </div>
+    </RadzenCard>
+
+    <RadzenCard>
+        <RadzenText TextStyle="TextStyle.H6">Add Signature</RadzenText>
+        <div id="signaturePad" style="border: 1px solid #ccc; margin: 10px 0;">
+            <canvas width="400" height="200"></canvas>
+        </div>
+
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Style="margin-top: 1rem">
+            <RadzenButton Text="Clear" Click="@ClearSignature" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton Text="Apply Signature" Click="@ApplySignature" ButtonStyle="ButtonStyle.Primary" />
+        </RadzenStack>
+    </RadzenCard>
+</RadzenStack>

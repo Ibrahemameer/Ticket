@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using RhinoTicketingSystem.Models.db_a79800_ticket;
 using RhinoTicketingSystem.Models.DbA79800Ticket;
 using System.Reflection.Emit;
+using RhinoTicketingSystem.Models;
 
 
 namespace RhinoTicketingSystem.Data
@@ -136,7 +137,23 @@ namespace RhinoTicketingSystem.Data
               .HasColumnType("datetime");
             this.OnModelBuilding(builder);
 
+            builder.Entity<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder>()
+              .HasOne(i => i.TblProject)
+              .WithMany(i => i.TblDocumentHeders) 
+              .HasForeignKey(i => i.ProjectId)
+              .HasPrincipalKey(i => i.Id);
 
+            builder.Entity<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment>()
+              .HasOne(i => i.TblDocumentHeder)
+              .WithMany(i => i.TblDocumentAttachments)
+              .HasForeignKey(i => i.DocumentId)
+              .HasPrincipalKey(i => i.Id);
+
+            builder.Entity<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize>()
+              .HasOne(i => i.TblDepartment)
+              .WithMany(i => i.TblDocumentSerializes)
+              .HasForeignKey(i => i.DepartmentId)
+              .HasPrincipalKey(i => i.Id);
 
         }
 
@@ -163,9 +180,15 @@ namespace RhinoTicketingSystem.Data
         public DbSet<RhinoTicketingSystem.Models.db_a79800_ticket.TblTaskDetail> TblTaskDetails { get; set; }
         public DbSet<RhinoTicketingSystem.Models.DbA79800Ticket.TblTicketattachment> TblTicketattachments { get; set; }
 
+        public DbSet<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentHeder> TblDocumentHeders { get; set; }
+        public DbSet<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentAttachment> TblDocumentAttachments { get; set; }
+        public DbSet<RhinoTicketingSystem.Models.db_a79800_ticket.TblProject> TblProjects { get; set; }
+        public DbSet<RhinoTicketingSystem.Models.db_a79800_ticket.TblDepartment> TblDepartments { get; set; }
+        public DbSet<RhinoTicketingSystem.Models.db_a79800_ticket.TblDocumentSerialize> TblDocumentSerializes { get; set; }
 
         public DbSet<OneDriveArchivingHeader> OneDriveArchivingHeaders { get; set; }
         public DbSet<OneDriveArchivingDetail> OneDriveArchivingDetails { get; set; }
+        public DbSet<SigningSession> SigningSessions { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

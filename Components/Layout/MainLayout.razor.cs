@@ -49,5 +49,15 @@ namespace RhinoTicketingSystem.Components.Layout
                 Security.Logout();
             }
         }
+        public List<string> PageNames { get; set; } = new List<string>
+    {
+        "Tasks",
+        "Tickets",
+        "Engineers",
+        "Categories",
+        "Departments",
+        "Documents",
+        // We Can Add other page names as needed
+    };
     }
 }
